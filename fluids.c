@@ -6,6 +6,8 @@
 #include <stdio.h>              //for printing the help text
 #include <math.h>               //for various math functions
 #include <GLUT/glut.h>            //the GLUT graphics library
+#include <string.h>
+#include <glui.h>
 
 
 //--- SIMULATION PARAMETERS ------------------------------------------------------------------------
@@ -28,7 +30,7 @@ int draw_vecs = 1;            //draw the vector field or not
 const int COLOR_BLACKWHITE = 0;   //different types of color mapping: black-and-white, rainbow, banded
 const int COLOR_RAINBOW = 1;
 const int COLOR_BANDS = 2;
-int scalar_col = 0;           //method for scalar coloring
+int scalar_col = 1;           //method for scalar coloring
 int frozen = 0;               //toggles on/off the animation
 
 
@@ -199,7 +201,7 @@ void do_one_simulation_step(void) {
 //rainbow: Implements a color palette, mapping the scalar 'value' to a rainbow color RGB
 void rainbow(float value, float *R, float *G, float *B) {
     const float dx = 0.8f;
-	printf(dx);
+	printf("%f\n", dx);
 
     if (value < 0) value = 0;
     if (value > 1) value = 1;
@@ -213,6 +215,7 @@ void rainbow(float value, float *R, float *G, float *B) {
 //set_colormap: Sets three different types of colormaps
 void set_colormap(float vy) {
     float R, G, B;
+    printf("%d\n", scalar_col);
 
     if (scalar_col == COLOR_BLACKWHITE) {
         R = G = B = vy;
@@ -415,8 +418,134 @@ void drag(int mx, int my) {
 
 
 
+/** These are the live variables passed into GLUI ***/
+int   wireframe = 0;
+int   segments = 8;
+int   main_window;
+
+
+/***************************************** myGlutIdle() ***********/
+
+void myGlutIdle()
+{
+    /* According to the GLUT specification, the current window is
+       undefined during an idle callback.  So we need to explicitly change
+       it if necessary */
+    if ( glutGetWindow() != main_window )
+        glutSetWindow(main_window);
+
+    glutPostRedisplay();
+}
+
+
+/**************************************** myGlutReshape() *************/
+
+void myGlutReshape( int x, int y )
+{
+    float xy_aspect;
+
+    xy_aspect = (float)x / (float)y;
+    glViewport( 0, 0, x, y );
+
+    glMatrixMode( GL_PROJECTION );
+    glLoadIdentity();
+    glFrustum( -xy_aspect*.08, xy_aspect*.08, -.08, .08, .1, 15.0 );
+
+    glutPostRedisplay();
+}
+
+/***************************************** myGlutDisplay() *****************/
+
+void myGlutDisplay()
+{
+    static float rotationX = 0.0, rotationY = 0.0;
+
+    glClearColor( .9f, .9f, .9f, 1.0f );
+    glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+
+    /*** Rotate the object ***/
+    rotationX += 3.3f;
+    rotationY += 4.7f;
+
+    glMatrixMode( GL_MODELVIEW );
+    glLoadIdentity();
+    glTranslatef( 0.0, 0.0, -1.0 );
+    glRotatef( rotationY, 0.0, 1.0, 0.0 );
+    glRotatef( rotationX, 1.0, 0.0, 0.0 );
+
+    /*** Now we render object, using the variables 'segments' and
+      'wireframe'.  These are _live_ variables, which are transparently
+      updated by GLUI ***/
+
+    if ( wireframe )
+        glutWireTorus( .2,.5,16,segments );
+    else
+        glutSolidTorus( .2,.5,16,segments );
+
+    glutSwapBuffers();
+}
+
+
+/**************************************** main() ********************/
+
+int main(int argc, char* argv[])
+{
+    /****************************************/
+    /*   Initialize GLUT and create window  */
+    /****************************************/
+
+    glutInit(&argc, argv);
+    glutInitDisplayMode( GLUT_RGB | GLUT_DOUBLE | GLUT_DEPTH );
+    glutInitWindowPosition( 50, 50 );
+    glutInitWindowSize( 300, 300 );
+
+    main_window = glutCreateWindow( "GLUI Example 1" );
+    glutDisplayFunc( myGlutDisplay );
+    glutReshapeFunc( myGlutReshape );
+
+    /****************************************/
+    /*       Set up OpenGL lights           */
+    /****************************************/
+
+    GLfloat light0_ambient[] =  {0.1f, 0.1f, 0.3f, 1.0f};
+    GLfloat light0_diffuse[] =  {.6f, .6f, 1.0f, 1.0f};
+    GLfloat light0_position[] = {1.0f, 1.0f, 1.0f, 0.0f};
+
+    glEnable(GL_LIGHTING);
+    glEnable(GL_LIGHT0);
+    glLightfv(GL_LIGHT0, GL_AMBIENT, light0_ambient);
+    glLightfv(GL_LIGHT0, GL_DIFFUSE, light0_diffuse);
+    glLightfv(GL_LIGHT0, GL_POSITION, light0_position);
+
+    /****************************************/
+    /*          Enable z-buferring          */
+    /****************************************/
+
+    glEnable(GL_DEPTH_TEST);
+
+
+    /****************************************/
+    /*         Here's the GLUI code         */
+    /****************************************/
+
+    GLUI *glui = GLUI_Master.create_glui( "GLUI" );
+    new GLUI_Checkbox( glui, "Wireframe", &wireframe );
+    (new GLUI_Spinner( glui, "Segments:", &segments ))
+    ->set_int_limits( 3, 60 );
+
+    glui->set_main_gfx_window( main_window );
+
+    /* We register the idle callback with GLUI, *not* with GLUT */
+    GLUI_Master.set_glutIdleFunc( myGlutIdle );
+
+    glutMainLoop();
+
+    return EXIT_SUCCESS;
+}
+
+
 //main: The main program
-int main(int argc, char **argv) {
+int main2(int argc, char **argv) {
     printf("Fluid Flow Simulation and Visualization\n");
     printf("=======================================\n");
     printf("Click and drag the mouse to steer the flow!\n");
@@ -433,14 +562,26 @@ int main(int argc, char **argv) {
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE | GLUT_DEPTH);
     glutInitWindowSize(500, 500);
-    glutCreateWindow("Real-time smoke simulation and visualization");
+    main_window = glutCreateWindow("Real-time smoke simulation and visualization");
     glutDisplayFunc(display);
     glutReshapeFunc(reshape);
     glutIdleFunc(do_one_simulation_step);
     glutKeyboardFunc(keyboard);
     glutMotionFunc(drag);
+    printf("dasd\n");
 
     init_simulation(DIM);    //initialize the simulation data structures
     glutMainLoop();            //calls do_one_simulation_step, keyboard, display, drag, reshape
+
+    GLUI *glui = GLUI_Master.create_glui( "GLUI" );
+    new GLUI_Checkbox( glui, "Wireframe", &wireframe );
+    (new GLUI_Spinner( glui, "Segments:", &segments )) -> set_int_limits( 3, 60 );
+
+    glui->set_main_gfx_window( main_window );
+
+    /* We register the idle callback with GLUI, *not* with GLUT */
+    GLUI_Master.set_glutIdleFunc( myGlutIdle );
+
+    glutMainLoop();
     return 0;
 }
