@@ -26,7 +26,7 @@ add_executable(
 #        fftw-2.1.5/sourceAndDoc/cilk/fftw_cilk.cilkh
 #        fftw-2.1.5/sourceAndDoc/cilk/fftwnd_cilk.cilk
 #        fftw-2.1.5/sourceAndDoc/cilk/Makefile
-#        fftw-2.1.5/sourceAndDoc/cilk/README
+#        fftw-2.1.5/sourceAndDoc/cilk/README.md
 #        fftw-2.1.5/sourceAndDoc/cilk/test_cilk.cilk
 #        fftw-2.1.5/sourceAndDoc/cilk/time_cilk.cilk
 #        fftw-2.1.5/sourceAndDoc/doc/equation-1.gif
@@ -182,7 +182,7 @@ add_executable(
 #        fftw-2.1.5/sourceAndDoc/gensrc/number.ml
 #        fftw-2.1.5/sourceAndDoc/gensrc/number.mli
 #        fftw-2.1.5/sourceAndDoc/gensrc/rconfig_prelude
-#        fftw-2.1.5/sourceAndDoc/gensrc/README
+#        fftw-2.1.5/sourceAndDoc/gensrc/README.md
 #        fftw-2.1.5/sourceAndDoc/gensrc/schedule.ml
 #        fftw-2.1.5/sourceAndDoc/gensrc/schedule.mli
 #        fftw-2.1.5/sourceAndDoc/gensrc/symmetry.ml
@@ -196,7 +196,7 @@ add_executable(
 #        fftw-2.1.5/sourceAndDoc/matlab/fftw.c
 #        fftw-2.1.5/sourceAndDoc/matlab/fftw.m
 #        fftw-2.1.5/sourceAndDoc/matlab/Makefile
-#        fftw-2.1.5/sourceAndDoc/matlab/README
+#        fftw-2.1.5/sourceAndDoc/matlab/README.md
 #        fftw-2.1.5/sourceAndDoc/mpi/fftw_f77_mpi.c
 #        fftw-2.1.5/sourceAndDoc/mpi/fftw_f77_mpi.h
 #        fftw-2.1.5/sourceAndDoc/mpi/fftw_mpi.c
@@ -206,7 +206,7 @@ add_executable(
 #        fftw-2.1.5/sourceAndDoc/mpi/Makefile
 #        fftw-2.1.5/sourceAndDoc/mpi/Makefile.am
 #        fftw-2.1.5/sourceAndDoc/mpi/Makefile.in
-#        fftw-2.1.5/sourceAndDoc/mpi/README.f77
+#        fftw-2.1.5/sourceAndDoc/mpi/README.md.f77
 #        fftw-2.1.5/sourceAndDoc/mpi/rfftw_f77_mpi.c
 #        fftw-2.1.5/sourceAndDoc/mpi/rfftw_mpi.h
 #        fftw-2.1.5/sourceAndDoc/mpi/rfftw_mpi_test.c
@@ -293,7 +293,7 @@ add_executable(
 #        fftw-2.1.5/sourceAndDoc/tests/Makefile
 #        fftw-2.1.5/sourceAndDoc/tests/Makefile.am
 #        fftw-2.1.5/sourceAndDoc/tests/Makefile.in
-#        fftw-2.1.5/sourceAndDoc/tests/README
+#        fftw-2.1.5/sourceAndDoc/tests/README.md
 #        fftw-2.1.5/sourceAndDoc/tests/rfftw_test.c
 #        fftw-2.1.5/sourceAndDoc/tests/test_main.c
 #        fftw-2.1.5/sourceAndDoc/tests/test_main.h
@@ -341,12 +341,12 @@ add_executable(
 #        fftw-2.1.5/sourceAndDoc/missing
 #        fftw-2.1.5/sourceAndDoc/mkinstalldirs
 #        fftw-2.1.5/sourceAndDoc/NEWS
-#        fftw-2.1.5/sourceAndDoc/README
-#        fftw-2.1.5/sourceAndDoc/README.hacks
+#        fftw-2.1.5/sourceAndDoc/README.md
+#        fftw-2.1.5/sourceAndDoc/README.md.hacks
 #        fftw-2.1.5/sourceAndDoc/TODO
 #        make.dep
 #        Makefile
-#        README
+#        README.md
 )
 
 target_link_libraries(
