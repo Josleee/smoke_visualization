@@ -3,8 +3,8 @@ project(SmokeOSX)
 
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -v -stdlib=libc++")
 add_compile_options(-stdlib=libstdc++)
+add_compile_options(-std=c++11)
 
 INCLUDE_DIRECTORIES(fftw-2.1.5/include)
 LINK_DIRECTORIES(fftw-2.1.5/lib)
@@ -351,7 +351,6 @@ add_executable(
 
 target_link_libraries(
         SmokeOSX
-        ${LIBSTDCXX}
         fftw-2.1.5/lib/libfftw.a
         fftw-2.1.5/lib/librfftw.a
 )
