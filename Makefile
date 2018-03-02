@@ -4,7 +4,7 @@ EXECFILE    = smoke
 FFTW        = ./fftw-2.1.5
 INCLUDEDIRS = -I$(FFTW)/include/
 LIBDIRS     = $(FFTW)/lib
-LIBS        = -framework GLUT -framework OpenGL -lrfftw -lfftw
+LIBS        = -framework GLUT -framework OpenGL -lrfftw -lfftw -lglui
 CFLAGS      = -O2 -Wall -pipe
 LINKFLAGS   = 
 
@@ -14,15 +14,15 @@ LINKFLAGS   =
 all: $(EXECFILE)
 
 $(EXECFILE): $(OBJECTS)
-		cc $(LINKFLAGS) $(OBJECTS) -o $(EXECFILE) -L$(LIBDIRS) $(LIBS)
+		g++ $(LINKFLAGS) $(OBJECTS) -o $(EXECFILE) -L$(LIBDIRS) $(LIBS)
 
 .c.o: $$@.c $$@.h
-		cc $(CFLAGS) $(INCLUDEDIRS) -c  $<
+		g++ $(CFLAGS) $(INCLUDEDIRS) -c  $<
 
 clean:
 		-rm -rf $(OBJECTS) $(EXECFILE)
 
 depend:
-		gcc -MM $(CFILES) > make.dep
+		g++ -MM $(CFILES) > make.dep
 
 -include make.dep
