@@ -165,7 +165,7 @@ typedef thread_id fftw_thread_id;
 
    MacOS X will have real SMP support, thank goodness. */
 
-/* Using this code in the MacOS: (See the README file for general
+/* Using this code in the MacOS: (See the README.md file for general
    documenation on the FFTW threads code.)  To use this code, you have
    to do two things.  First of all, you have to #define the symbol
    FFTW_USING_MACOS_THREADS. This can be done at the top of this file
