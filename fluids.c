@@ -8,7 +8,7 @@
 #include <GLUT/glut.h>            //the GLUT graphics library
 #include <string.h>
 #include <glui.h>
-#include <jmorecfg.h>
+//#include <jmorecfg.h>
 
 
 //--- SIMULATION PARAMETERS ------------------------------------------------------------------------
@@ -422,9 +422,6 @@ void drag(int mx, int my) {
 int wireframe = 0;
 int segments = 8;
 int main_window;
-
-/*** Test ***/
-boolean is_color = FALSE;
 
 
 /***************************************** myGlutIdle() ***********/
