@@ -26,10 +26,12 @@ int winWidth, winHeight;      //size of the graphics window, in pixels
 int color_dir = 1;            //use direction color-coding or not
 float vec_scale = 1000;            //scaling of hedgehogs
 int draw_smoke = 1;           //draw the smoke or not
+float clamp_range = 1;
 int draw_vecs = 1;            //draw the vector field or not
 const int COLOR_BLACKWHITE = 0;   //different types of color mapping: black-and-white, rainbow, banded
 const int COLOR_RAINBOW = 1;
 const int COLOR_BANDS = 2;
+const int RED_RAINBOW = 3;
 int scalar_col = 1;           //method for scalar coloring
 int frozen = 0;               //toggles on/off the animation
 
@@ -202,10 +204,23 @@ void rainbow(float value, float *R, float *G, float *B) {
 //    printf("%f\n", dx);
 
     if (value < 0) value = 0;
-    if (value > 1) value = 1;
+    if (value > clamp_range) value = clamp_range;
     value = (6 - 2 * dx) * value + dx;
 
     *R = max(0.0f, (3 - (float) fabs(value - 4) - (float) fabs(value - 5)) / 2);
+    *G = max(0.0f, (4 - (float) fabs(value - 2) - (float) fabs(value - 4)) / 2);
+    *B = max(0.0f, (3 - (float) fabs(value - 1) - (float) fabs(value - 2)) / 2);
+}
+
+void redwhite(float value, float *R, float *G, float *B) {
+    const float dx = 0.2f;
+//    printf("%f\n", dx);
+
+    if (value < 0) value = 0;
+    if (value > clamp_range) value = clamp_range;
+    value = (6 - 2 * dx) * value + dx;
+
+    *R = 255;
     *G = max(0.0f, (4 - (float) fabs(value - 2) - (float) fabs(value - 4)) / 2);
     *B = max(0.0f, (3 - (float) fabs(value - 1) - (float) fabs(value - 2)) / 2);
 }
@@ -219,6 +234,8 @@ void set_colormap(float vy) {
         R = G = B = vy;
     } else if (scalar_col == COLOR_RAINBOW) {
         rainbow(vy, &R, &G, &B);
+    } else if(scalar_col == RED_RAINBOW){
+        redwhite(vy, &B, &G, &R);
     } else if (scalar_col == COLOR_BANDS) {
         const int NLEVELS = 7;
         vy *= NLEVELS;
@@ -422,21 +439,12 @@ GLUI_Spinner *min_spinner, *max_spinner;
 int test;
 
 void control_cb(int control) {
-    /********************************************************************
-      Here we'll print the user id of the control that generated the
-      callback, and we'll also explicitly get the values of each control.
-      Note that we really didn't have to explicitly get the values, since
-      they are already all contained within the live variables:
-      'wireframe',  'segments',  'obj',  and 'text'
-      ********************************************************************/
-
     printf("callback: %d\n", control);
 //    printf( "             checkbox: %d\n", checkbox->get_int_val() );
     printf("              spinner: %d\n", min_spinner->get_int_val());
     printf("              spinner: %d\n", max_spinner->get_int_val());
     printf("          radio group: %d\n", radio->get_int_val());
 //    printf( "                 text: %s\n", edittext->get_text().c_str() );
-
 }
 
 //main: The main program
