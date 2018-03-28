@@ -23,9 +23,9 @@ rfftwnd_plan plan_rc, plan_cr;  //simulation domain discretization
 
 //--- VISUALIZATION PARAMETERS ---------------------------------------------------------------------
 int winWidth, winHeight;      //size of the graphics window, in pixels
-int color_dir = 0;            //use direction color-coding or not
+int color_dir = 1;            //use direction color-coding or not
 float vec_scale = 1000;            //scaling of hedgehogs
-int draw_smoke = 0;           //draw the smoke or not
+int draw_smoke = 1;           //draw the smoke or not
 int draw_vecs = 1;            //draw the vector field or not
 const int COLOR_BLACKWHITE = 0;   //different types of color mapping: black-and-white, rainbow, banded
 const int COLOR_RAINBOW = 1;
@@ -198,7 +198,6 @@ void do_one_simulation_step(void) {
 
 //------ VISUALIZATION CODE STARTS HERE -----------------------------------------------------------------
 
-
 //rainbow: Implements a color palette, mapping the scalar 'value' to a rainbow color RGB
 void rainbow(float value, float *R, float *G, float *B) {
     const float dx = 0.8f;
@@ -339,7 +338,6 @@ void reshape(int w, int h) {
 
 //keyboard: Handle key presses
 void keyboard(unsigned char key, int x, int y) {
-    printf("%i\n", obj_type);
     switch (key) {
         case 't':
             dt -= 0.001;
@@ -420,8 +418,6 @@ void drag(int mx, int my) {
 
 
 /** These are the live variables passed into GLUI ***/
-int wireframe = 0;
-int segments = 8;
 int main_window;
 
 
@@ -453,37 +449,10 @@ void myGlutReshape(int x, int y) {
     glutPostRedisplay();
 }
 
-/***************************************** myGlutDisplay() *****************/
-
-void myGlutDisplay() {
-    static float rotationX = 0.0, rotationY = 0.0;
-
-    glClearColor(.9f, .9f, .9f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    /*** Rotate the object ***/
-    rotationX += 3.3f;
-    rotationY += 4.7f;
-
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
-    glTranslatef(0.0, 0.0, -1.0);
-    glRotatef(rotationY, 0.0, 1.0, 0.0);
-    glRotatef(rotationX, 1.0, 0.0, 0.0);
-
-    /*** Now we render object, using the variables 'segments' and
-      'wireframe'.  These are _live_ variables, which are transparently
-      updated by GLUI ***/
-
-    if (wireframe)
-        glutWireTorus(.2, .5, 16, segments);
-    else
-        glutSolidTorus(.2, .5, 16, segments);
-
-    glutSwapBuffers();
-}
 
 GLUI_RadioGroup *radio;
+GLUI_Spinner *min_spinner, *max_spinner;
+int test;
 
 
 //main: The main program
@@ -516,36 +485,32 @@ int main(int argc, char **argv) {
     init_simulation(DIM);    //initialize the simulation data structures
 
     /*** Create the side subwindow ***/
-    GLUI *glui = GLUI_Master.create_glui_subwindow(main_window, GLUI_SUBWINDOW_RIGHT);
-    GLUI_Panel *obj_panel = new GLUI_Rollout(glui, "Properties", false);
+    GLUI *glui = GLUI_Master.create_glui_subwindow(main_window, GLUI_SUBWINDOW_BOTTOM);
+    GLUI_Panel *obj_panel = new GLUI_Rollout(glui, "Colormap", true);
 
-    /***** Control for the object type *****/
+    /***** Control for colormap *****/
     GLUI_Panel *type_panel = new GLUI_Panel(obj_panel, "Colormap");
-    radio = new GLUI_RadioGroup(type_panel, &color_dir, 3);
+    radio = new GLUI_RadioGroup(type_panel, &scalar_col, 1);
     new GLUI_RadioButton(radio, "Black and white");
     new GLUI_RadioButton(radio, "Rainbow");
     new GLUI_RadioButton(radio, "Color band");
 
-//    new GLUI_Checkbox( obj_panel, "Wireframe", &wireframe, 1, control_cb );
-//    GLUI_Spinner *spinner =
-//    new GLUI_Spinner( obj_panel, "Segments:", &segments);
-//    spinner->set_int_limits( 3, 60 );
-//    spinner->set_alignment( GLUI_ALIGN_RIGHT );
-//
-//    GLUI_Spinner *scale_spinner =
-//    new GLUI_Spinner( obj_panel, "Scale:", &scale);
-//    scale_spinner->set_float_limits( .2f, 4.0 );
-//    scale_spinner->set_alignment( GLUI_ALIGN_RIGHT );
+    min_spinner = new GLUI_Spinner(obj_panel, "Min:", &test);
+    min_spinner->set_int_limits(2, 256);
+    min_spinner->set_alignment(GLUI_ALIGN_LEFT);
 
-    new GLUI_Checkbox(obj_panel, "color_dir", &scalar_col);
-    (new GLUI_Spinner(obj_panel, "Segments", &segments))->set_int_limits(3, 60);
+    max_spinner = new GLUI_Spinner(obj_panel, "Max:", &test);
+    max_spinner->set_int_limits(2, 256);
+    max_spinner->set_alignment(GLUI_ALIGN_LEFT);
 
+//    new GLUI_Checkbox(obj_panel, "color_dir", &scalar_col);
+//    (new GLUI_Spinner(obj_panel, "Segments", &segments))->set_int_limits(3, 60);
 //    printf("%i\n", wireframe);
 //    printf("%i\n", segments);
 
     glui->set_main_gfx_window(main_window);
 
-    /* We register the idle callback with GLUI, *not* with GLUT */
+//    /* We register the idle callback with GLUI, *not* with GLUT */
 //    GLUI_Master.set_glutIdleFunc(myGlutIdle);
 
     glutMainLoop();            //calls do_one_simulation_step, keyboard, display, drag, reshape
