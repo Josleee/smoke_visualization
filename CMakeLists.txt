@@ -11,7 +11,7 @@ LINK_DIRECTORIES(fftw-2.1.5/lib)
 
 add_executable(
         SmokeOSX
-        fluids.c
+        fluids.cpp
 #        fftw-2.1.5/lib/libfftw.a
 #        fftw-2.1.5/lib/librfftw.a
 #        fftw-2.1.5/include/fftw.h
