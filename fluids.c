@@ -471,18 +471,17 @@ int main(int argc, char **argv) {
     new GLUI_RadioButton(radio, "Rainbow");
     new GLUI_RadioButton(radio, "Color band");
 
-    min_spinner = new GLUI_Spinner(obj_panel, "Min:", &test, 2, control_cb);
+    min_spinner = new GLUI_Spinner(type_panel, "Min:", &test, 2, control_cb);
     min_spinner->set_int_limits(2, 256);
     min_spinner->set_alignment(GLUI_ALIGN_LEFT);
 
-    max_spinner = new GLUI_Spinner(obj_panel, "Max:", &test, 3, control_cb);
+    max_spinner = new GLUI_Spinner(type_panel, "Max:", &test, 3, control_cb);
     max_spinner->set_int_limits(2, 256);
     max_spinner->set_alignment(GLUI_ALIGN_LEFT);
 
     glutDisplayFunc(display);
     glutReshapeFunc(reshape);
 
-    glutIdleFunc(do_one_simulation_step);
     glutKeyboardFunc(keyboard);
     glutMotionFunc(drag);
 
@@ -495,6 +494,7 @@ int main(int argc, char **argv) {
 
     glui->set_main_gfx_window(main_window);
     //calls do_one_simulation_step, keyboard, display, drag, reshape
+    GLUI_Master.set_glutIdleFunc(do_one_simulation_step);
     glutMainLoop();
     return 0;
 }
