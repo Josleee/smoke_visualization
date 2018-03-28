@@ -11,7 +11,7 @@
 
 
 //--- SIMULATION PARAMETERS ------------------------------------------------------------------------
-const int DIM = 100;            //size of simulation grid
+const int DIM = 70;            //size of simulation grid
 double dt = 0.4;                //simulation time step
 float visc = 0.001;                //fluid viscosity
 fftw_real *vx, *vy;             //(vx,vy)   = velocity field at the current moment
@@ -32,8 +32,6 @@ const int COLOR_RAINBOW = 1;
 const int COLOR_BANDS = 2;
 int scalar_col = 1;           //method for scalar coloring
 int frozen = 0;               //toggles on/off the animation
-
-int obj_type = 1;
 
 
 //------ SIMULATION CODE STARTS HERE -----------------------------------------------------------------
@@ -419,41 +417,27 @@ void drag(int mx, int my) {
 
 /** These are the live variables passed into GLUI ***/
 int main_window;
-
-
-/***************************************** myGlutIdle() ***********/
-
-void myGlutIdle() {
-    /* According to the GLUT specification, the current window is
-       undefined during an idle callback.  So we need to explicitly change
-       it if necessary */
-    if (glutGetWindow() != main_window)
-        glutSetWindow(main_window);
-
-    glutPostRedisplay();
-}
-
-
-/**************************************** myGlutReshape() *************/
-
-void myGlutReshape(int x, int y) {
-    float xy_aspect;
-
-    xy_aspect = (float) x / (float) y;
-    glViewport(0, 0, x, y);
-
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-    glFrustum(-xy_aspect * .08, xy_aspect * .08, -.08, .08, .1, 15.0);
-
-    glutPostRedisplay();
-}
-
-
 GLUI_RadioGroup *radio;
 GLUI_Spinner *min_spinner, *max_spinner;
 int test;
 
+void control_cb(int control) {
+    /********************************************************************
+      Here we'll print the user id of the control that generated the
+      callback, and we'll also explicitly get the values of each control.
+      Note that we really didn't have to explicitly get the values, since
+      they are already all contained within the live variables:
+      'wireframe',  'segments',  'obj',  and 'text'
+      ********************************************************************/
+
+    printf("callback: %d\n", control);
+//    printf( "             checkbox: %d\n", checkbox->get_int_val() );
+    printf("              spinner: %d\n", min_spinner->get_int_val());
+    printf("              spinner: %d\n", max_spinner->get_int_val());
+    printf("          radio group: %d\n", radio->get_int_val());
+//    printf( "                 text: %s\n", edittext->get_text().c_str() );
+
+}
 
 //main: The main program
 int main(int argc, char **argv) {
@@ -475,14 +459,6 @@ int main(int argc, char **argv) {
     glutInitWindowSize(600, 600);
 
     main_window = glutCreateWindow("Real-time smoke simulation and visualization");
-    glutDisplayFunc(display);
-    glutReshapeFunc(reshape);
-
-    glutIdleFunc(do_one_simulation_step);
-    glutKeyboardFunc(keyboard);
-    glutMotionFunc(drag);
-
-    init_simulation(DIM);    //initialize the simulation data structures
 
     /*** Create the side subwindow ***/
     GLUI *glui = GLUI_Master.create_glui_subwindow(main_window, GLUI_SUBWINDOW_BOTTOM);
@@ -495,13 +471,22 @@ int main(int argc, char **argv) {
     new GLUI_RadioButton(radio, "Rainbow");
     new GLUI_RadioButton(radio, "Color band");
 
-    min_spinner = new GLUI_Spinner(obj_panel, "Min:", &test);
+    min_spinner = new GLUI_Spinner(obj_panel, "Min:", &test, 2, control_cb);
     min_spinner->set_int_limits(2, 256);
     min_spinner->set_alignment(GLUI_ALIGN_LEFT);
 
-    max_spinner = new GLUI_Spinner(obj_panel, "Max:", &test);
+    max_spinner = new GLUI_Spinner(obj_panel, "Max:", &test, 3, control_cb);
     max_spinner->set_int_limits(2, 256);
     max_spinner->set_alignment(GLUI_ALIGN_LEFT);
+
+    glutDisplayFunc(display);
+    glutReshapeFunc(reshape);
+
+    glutIdleFunc(do_one_simulation_step);
+    glutKeyboardFunc(keyboard);
+    glutMotionFunc(drag);
+
+    init_simulation(DIM);
 
 //    new GLUI_Checkbox(obj_panel, "color_dir", &scalar_col);
 //    (new GLUI_Spinner(obj_panel, "Segments", &segments))->set_int_limits(3, 60);
@@ -509,10 +494,7 @@ int main(int argc, char **argv) {
 //    printf("%i\n", segments);
 
     glui->set_main_gfx_window(main_window);
-
-//    /* We register the idle callback with GLUI, *not* with GLUT */
-//    GLUI_Master.set_glutIdleFunc(myGlutIdle);
-
-    glutMainLoop();            //calls do_one_simulation_step, keyboard, display, drag, reshape
+    //calls do_one_simulation_step, keyboard, display, drag, reshape
+    glutMainLoop();
     return 0;
 }
