@@ -26,7 +26,7 @@ int winWidth, winHeight;      //size of the graphics window, in pixels
 int color_dir = 1;            //use direction color-coding or not
 float vec_scale = 1000;            //scaling of hedgehogs
 int draw_smoke = 1;           //draw the smoke or not
-float clamp_range = 0.1;
+float clamp_range = 1;
 int draw_vecs = 1;            //draw the vector field or not
 const int COLOR_BLACKWHITE = 0;   //different types of color mapping: black-and-white, rainbow, banded
 const int COLOR_RAINBOW = 1;
@@ -234,7 +234,7 @@ void set_colormap(float vy) {
         R = G = B = vy;
     } else if (scalar_col == COLOR_RAINBOW) {
         rainbow(vy, &R, &G, &B);
-    } else if(scalar_col == RED_RAINBOW){
+    } else if (scalar_col == RED_RAINBOW) {
         redwhite(vy, &B, &G, &R);
     } else if (scalar_col == COLOR_BANDS) {
         const int NLEVELS = 7;
@@ -447,6 +447,23 @@ void control_cb(int control) {
 //    printf( "                 text: %s\n", edittext->get_text().c_str() );
 }
 
+void control_radio(int control) {
+    int val = radio->get_int_val();
+    if (val == 0) {
+        color_dir = 0;
+        min_spinner->disable();
+        max_spinner->disable();
+    } else if (val == 2) {
+        color_dir = 1;
+        min_spinner->enable();
+        max_spinner->enable();
+    } else {
+        color_dir = 1;
+        min_spinner->disable();
+        max_spinner->disable();
+    }
+}
+
 //main: The main program
 int main(int argc, char **argv) {
     printf("Fluid Flow Simulation and Visualization\n");
@@ -474,18 +491,21 @@ int main(int argc, char **argv) {
 
     /***** Control for colormap *****/
     GLUI_Panel *type_panel = new GLUI_Panel(obj_panel, "Colormap");
-    radio = new GLUI_RadioGroup(type_panel, &scalar_col, 1);
+    radio = new GLUI_RadioGroup(type_panel, &scalar_col, 1, control_radio);
     new GLUI_RadioButton(radio, "Black and white");
     new GLUI_RadioButton(radio, "Rainbow");
     new GLUI_RadioButton(radio, "Color band");
+    new GLUI_RadioButton(radio, "Fantasy");
 
     min_spinner = new GLUI_Spinner(type_panel, "Min:", &test, 2, control_cb);
     min_spinner->set_int_limits(2, 256);
     min_spinner->set_alignment(GLUI_ALIGN_LEFT);
+    min_spinner->disable();
 
     max_spinner = new GLUI_Spinner(type_panel, "Max:", &test, 3, control_cb);
     max_spinner->set_int_limits(2, 256);
     max_spinner->set_alignment(GLUI_ALIGN_LEFT);
+    max_spinner->disable();
 
     glutDisplayFunc(display);
     glutReshapeFunc(reshape);
