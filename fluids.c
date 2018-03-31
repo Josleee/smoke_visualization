@@ -32,7 +32,7 @@ int color_dir = 1;            //use direction color-coding or not
 float vec_scale = 1000;            //scaling of hedgehogs
 int draw_smoke = 1;           //draw the smoke or not
 float clamp_range = 1;
-int draw_vecs = 0;            //draw the vector field or not
+int draw_vecs = 1;            //draw the vector field or not
 const int COLOR_BLACKWHITE = 0;   //different types of color mapping: black-and-white, rainbow, banded
 const int COLOR_RAINBOW = 1;
 const int RED_RAINBOW = 2;
@@ -380,21 +380,38 @@ void visualize(void) {
         }
         glEnd();
     }
-
     if (draw_vecs) {
-        glBegin(GL_LINES);                //draw velocities
+//        float tail[2],head[2];
+        float f;
+        glBegin(GL_LINES);//draw velocities
         for (i = 0; i < DIM; i++)
             for (j = 0; j < DIM; j++) {
                 idx = (j * DIM) + i;
                 direction_to_color(vx[idx], vy[idx], color_dir);
+//                printf("%f %f\n",wn + (fftw_real) i * wn,hn + (fftw_real) j * hn);
+//                GLfloat v[ 2] = { vx[idx],vy[idx]};
+//                glVertex2fv(&v[ 0]);
+                f = atan2( vy[idx], vx[idx]) / 3.1415927 + 1;
+//                vec_scale = 1000 * f;
                 glVertex2f(wn + (fftw_real) i * wn, hn + (fftw_real) j * hn);
+                glVertex2f((wn + (fftw_real) i * wn) + vec_scale * vx[idx],
+                           (hn + (fftw_real) j * hn) + vec_scale * vy[idx]);
+
+                glVertex2f((wn + (fftw_real) i * wn) + vec_scale * vx[idx],
+                           (hn + (fftw_real) j * hn) + vec_scale * vy[idx]);
+                glVertex2f((wn + (fftw_real) i * wn) + vec_scale * vx[idx]*0.5,
+                           (hn + (fftw_real) j * hn) + vec_scale * vy[idx]);
+
+//
+                glVertex2f((wn + (fftw_real) i * wn) + vec_scale * vx[idx],
+                           (hn + (fftw_real) j * hn) + vec_scale * vy[idx]*0.5);
                 glVertex2f((wn + (fftw_real) i * wn) + vec_scale * vx[idx],
                            (hn + (fftw_real) j * hn) + vec_scale * vy[idx]);
             }
         glEnd();
     }
 
-    drawLegends();
+drawLegends();
 }
 
 
