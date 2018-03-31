@@ -32,7 +32,7 @@ int color_dir = 1;            //use direction color-coding or not
 float vec_scale = 1000;            //scaling of hedgehogs
 int draw_smoke = 1;           //draw the smoke or not
 float clamp_range = 1;
-int draw_vecs = 0;            //draw the vector field or not
+int draw_vecs = 1;            //draw the vector field or not
 const int COLOR_BLACKWHITE = 0;   //different types of color mapping: black-and-white, rainbow, banded
 const int COLOR_RAINBOW = 1;
 const int RED_RAINBOW = 2;
@@ -240,13 +240,13 @@ void set_colormap(float vy) {
 //    printf("%d\n", scalar_col);
 
     if (scalar_col == COLOR_BANDS) {
-        float color_clamp_min = (float)minimal / 256;
-        float color_clamp_max = (float)maximal / 256;
+        float color_clamp_min = (float) minimal / 256;
+        float color_clamp_max = (float) maximal / 256;
 
-        if (vy < color_clamp_min){
+        if (vy < color_clamp_min) {
             vy = color_clamp_min;
         }
-        if (vy > color_clamp_max){
+        if (vy > color_clamp_max) {
             vy = color_clamp_max;
         }
     }
@@ -289,6 +289,49 @@ void direction_to_color(float x, float y, int method) {
     glColor3f(r, g, b);
 }
 
+void drawLegends() {
+    glMatrixMode(GL_MODELVIEW);
+    glPushMatrix();
+    glBegin(GL_QUADS);
+
+    for (int i = 0; i < 1001; i = i + 1) {
+        float vy = 0.001 * i;
+
+        if (scalar_col == COLOR_BANDS) {
+            float color_clamp_min = (float) minimal / 256;
+            float color_clamp_max = (float) maximal / 256;
+
+            if (vy < color_clamp_min) {
+                vy = color_clamp_min;
+            }
+            if (vy > color_clamp_max) {
+                vy = color_clamp_max;
+            }
+        }
+
+        set_colormap(vy);
+        glVertex2f(730, (0.5 * i) + 230); //(x,y top left)
+        glVertex2f(760, (0.5 * i) + 230); //(x,y bottom left)
+        glVertex2f(730, (0.5 * (i + 1)) + 230); //(x,y bottom right)
+        glVertex2f(760, (0.5 * (i + 1)) + 230); //(x,y top right)
+    }
+
+    glEnd();
+    glPopMatrix();
+
+    glBegin(GL_LINES);
+    glColor3f(255, 255, 255);
+    glVertex2f(730, 230); //(x,y top left)
+    glVertex2f(760, 230); //(x,y bottom left)
+    glVertex2f(730, 500 + 230); //(x,y bottom right)
+    glVertex2f(760, 500 + 230); //(x,y top right)
+    glVertex2f(730, 230); //(x,y bottom right)
+    glVertex2f(730, 500 + 230); //(x,y bottom right)
+    glVertex2f(760, 230); //(x,y bottom left)
+    glVertex2f(760, 500 + 230); //(x,y bottom left)
+    glEnd();
+}
+
 //visualize: This is the main visualization function
 void visualize(void) {
     int i, j, idx, idx0, idx1, idx2, idx3;
@@ -296,9 +339,11 @@ void visualize(void) {
     fftw_real wn = (fftw_real) winWidth / (fftw_real) (DIM + 1);   // Grid cell width
     fftw_real hn = (fftw_real) winHeight / (fftw_real) (DIM + 1);  // Grid cell heigh
 
+
     if (draw_smoke) {
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
         glBegin(GL_TRIANGLES);
+
         for (j = 0; j < DIM - 1; j++)            //draw smoke
         {
             for (i = 0; i < DIM - 1; i++) {
@@ -335,19 +380,38 @@ void visualize(void) {
         }
         glEnd();
     }
-
     if (draw_vecs) {
-        glBegin(GL_LINES);                //draw velocities
+//        float tail[2],head[2];
+        float f;
+        glBegin(GL_LINES);//draw velocities
         for (i = 0; i < DIM; i++)
             for (j = 0; j < DIM; j++) {
                 idx = (j * DIM) + i;
                 direction_to_color(vx[idx], vy[idx], color_dir);
+//                printf("%f %f\n",wn + (fftw_real) i * wn,hn + (fftw_real) j * hn);
+//                GLfloat v[ 2] = { vx[idx],vy[idx]};
+//                glVertex2fv(&v[ 0]);
+                f = atan2( vy[idx], vx[idx]) / 3.1415927 + 1;
+//                vec_scale = 1000 * f;
                 glVertex2f(wn + (fftw_real) i * wn, hn + (fftw_real) j * hn);
+                glVertex2f((wn + (fftw_real) i * wn) + vec_scale * vx[idx],
+                           (hn + (fftw_real) j * hn) + vec_scale * vy[idx]);
+
+                glVertex2f((wn + (fftw_real) i * wn) + vec_scale * vx[idx],
+                           (hn + (fftw_real) j * hn) + vec_scale * vy[idx]);
+                glVertex2f((wn + (fftw_real) i * wn) + vec_scale * vx[idx]*0.5,
+                           (hn + (fftw_real) j * hn) + vec_scale * vy[idx]);
+
+//
+                glVertex2f((wn + (fftw_real) i * wn) + vec_scale * vx[idx],
+                           (hn + (fftw_real) j * hn) + vec_scale * vy[idx]*0.5);
                 glVertex2f((wn + (fftw_real) i * wn) + vec_scale * vx[idx],
                            (hn + (fftw_real) j * hn) + vec_scale * vy[idx]);
             }
         glEnd();
     }
+
+drawLegends();
 }
 
 
@@ -355,7 +419,15 @@ void visualize(void) {
 
 //display: Handle window redrawing events. Simply delegates to visualize().
 void display(void) {
+//    glEnable(GL_DEPTH_TEST);
+//    glEnable(GL_COLOR_TABLE);
+//    glEnable(GL_SMOOTH);
+
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+//    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+//    glEnable(GL_BLEND);
+
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
     visualize();
@@ -499,28 +571,37 @@ int main(int argc, char **argv) {
 
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE | GLUT_DEPTH);
-    glutInitWindowSize(600, 600);
+    glutInitWindowSize(800, 800);
 
     main_window = glutCreateWindow("Real-time smoke simulation and visualization");
 
     /*** Create the side subwindow ***/
     GLUI *glui = GLUI_Master.create_glui_subwindow(main_window, GLUI_SUBWINDOW_BOTTOM);
-    GLUI_Panel *obj_panel = new GLUI_Rollout(glui, "Colormap", true);
+    GLUI_Panel *obj_panel = new
+    GLUI_Rollout(glui, "Colormap", true);
 
     /***** Control for colormap *****/
-    GLUI_Panel *type_panel = new GLUI_Panel(obj_panel, "Colormap");
-    radio = new GLUI_RadioGroup(type_panel, &scalar_col, 1, control_radio);
-    new GLUI_RadioButton(radio, "Black and white");
-    new GLUI_RadioButton(radio, "Rainbow");
-    new GLUI_RadioButton(radio, "Fantasy");
-    new GLUI_RadioButton(radio, "Color band");
+    GLUI_Panel *type_panel = new
+    GLUI_Panel(obj_panel, "Colormap");
+    radio = new
+    GLUI_RadioGroup(type_panel, &scalar_col, 1, control_radio);
+    new
+    GLUI_RadioButton(radio, "Black and white");
+    new
+    GLUI_RadioButton(radio, "Rainbow");
+    new
+    GLUI_RadioButton(radio, "Fantasy");
+    new
+    GLUI_RadioButton(radio, "Color band");
 
-    min_spinner = new GLUI_Spinner(type_panel, "Min:", &minimal, 2, control_cb);
+    min_spinner = new
+    GLUI_Spinner(type_panel, "Min:", &minimal, 2, control_cb);
     min_spinner->set_int_limits(2, 256);
     min_spinner->set_alignment(GLUI_ALIGN_LEFT);
     min_spinner->disable();
 
-    max_spinner = new GLUI_Spinner(type_panel, "Max:", &maximal, 3, control_cb);
+    max_spinner = new
+    GLUI_Spinner(type_panel, "Max:", &maximal, 3, control_cb);
     max_spinner->set_int_limits(2, 256);
     max_spinner->set_alignment(GLUI_ALIGN_LEFT);
     max_spinner->disable();
