@@ -7,22 +7,22 @@ LIBDIRS     = $(FFTW)/lib
 LIBS        = -framework GLUT -framework OpenGL -lrfftw -lfftw -lglui
 CFLAGS      = -O2 -Wall -pipe
 LINKFLAGS   = 
-
+CC          = g++
 
 .SILENT:
 
 all: $(EXECFILE)
 
 $(EXECFILE): $(OBJECTS)
-		g++ $(LINKFLAGS) $(OBJECTS) -o $(EXECFILE) -L$(LIBDIRS) $(LIBS)
+		$(CC) $(LINKFLAGS) $(OBJECTS) -o $(EXECFILE) -L$(LIBDIRS) $(LIBS)
 
 .c.o: $$@.c $$@.h
-		g++ $(CFLAGS) $(INCLUDEDIRS) -c  $<
+		$(CC) $(CFLAGS) $(INCLUDEDIRS) -c  $<
 
 clean:
 		-rm -rf $(OBJECTS) $(EXECFILE)
 
 depend:
-		g++ -MM $(CFILES) > make.dep
+		$(CC) -MM $(CFILES) > make.dep
 
 -include make.dep
