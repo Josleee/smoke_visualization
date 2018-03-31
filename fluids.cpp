@@ -9,9 +9,14 @@
 #include <string.h>
 #include <glui.h>
 
+/** These are the live variables passed into GLUI ***/
+int main_window;
+GLUI_RadioGroup *radio;
+GLUI_Spinner *min_spinner, *max_spinner;
+int minimal = 1, maximal = 256;
 
 //--- SIMULATION PARAMETERS ------------------------------------------------------------------------
-const int DIM = 70;            //size of simulation grid
+const int DIM = 60;            //size of simulation grid
 double dt = 0.4;                //simulation time step
 float visc = 0.001;                //fluid viscosity
 fftw_real *vx, *vy;             //(vx,vy)   = velocity field at the current moment
@@ -27,11 +32,11 @@ int color_dir = 1;            //use direction color-coding or not
 float vec_scale = 1000;            //scaling of hedgehogs
 int draw_smoke = 1;           //draw the smoke or not
 float clamp_range = 1;
-int draw_vecs = 1;            //draw the vector field or not
+int draw_vecs = 0;            //draw the vector field or not
 const int COLOR_BLACKWHITE = 0;   //different types of color mapping: black-and-white, rainbow, banded
 const int COLOR_RAINBOW = 1;
-const int COLOR_BANDS = 2;
-const int RED_RAINBOW = 3;
+const int RED_RAINBOW = 2;
+const int COLOR_BANDS = 3;
 int scalar_col = 1;           //method for scalar coloring
 int frozen = 0;               //toggles on/off the animation
 
@@ -225,25 +230,42 @@ void redwhite(float value, float *R, float *G, float *B) {
     *B = max(0.0f, (3 - (float) fabs(value - 1) - (float) fabs(value - 2)) / 2);
 }
 
+float scaleVelocity(float v, float min, float max) {
+    return (v - min) / (max - min);
+}
+
 //set_colormap: Sets three different types of colormaps
 void set_colormap(float vy) {
     float R, G, B;
 //    printf("%d\n", scalar_col);
 
+    if (scalar_col == COLOR_BANDS) {
+        float color_clamp_min = (float)minimal / 256;
+        float color_clamp_max = (float)maximal / 256;
+
+        if (vy < color_clamp_min){
+            vy = color_clamp_min;
+        }
+        if (vy > color_clamp_max){
+            vy = color_clamp_max;
+        }
+    }
+
     if (scalar_col == COLOR_BLACKWHITE) {
         R = G = B = vy;
     } else if (scalar_col == COLOR_RAINBOW) {
         rainbow(vy, &R, &G, &B);
-    } else if(scalar_col == RED_RAINBOW){
+    } else if (scalar_col == RED_RAINBOW) {
         redwhite(vy, &B, &G, &R);
     } else if (scalar_col == COLOR_BANDS) {
-        const int NLEVELS = 7;
-        vy *= NLEVELS;
-        vy = (int) (vy);
-        vy /= NLEVELS;
+//        const int NLEVELS = 7;
+//        printf("before %f\n", vy);
+//        vy *= NLEVELS;
+//        vy = (int) (vy);
+//        vy /= NLEVELS;
+//        printf("after %f\n", vy);
         rainbow(vy, &R, &G, &B);
     }
-
     glColor3f(R, G, B);
 }
 
@@ -432,12 +454,6 @@ void drag(int mx, int my) {
 }
 
 
-/** These are the live variables passed into GLUI ***/
-int main_window;
-GLUI_RadioGroup *radio;
-GLUI_Spinner *min_spinner, *max_spinner;
-int test;
-
 void control_cb(int control) {
     printf("callback: %d\n", control);
 //    printf( "             checkbox: %d\n", checkbox->get_int_val() );
@@ -445,6 +461,25 @@ void control_cb(int control) {
     printf("              spinner: %d\n", max_spinner->get_int_val());
     printf("          radio group: %d\n", radio->get_int_val());
 //    printf( "                 text: %s\n", edittext->get_text().c_str() );
+}
+
+void control_radio(int control) {
+    int val = radio->get_int_val();
+    scalar_col = val;
+
+    if (val == 0) {
+        color_dir = 0;
+        min_spinner->disable();
+        max_spinner->disable();
+    } else if (val == 3) {
+        color_dir = 1;
+        min_spinner->enable();
+        max_spinner->enable();
+    } else {
+        color_dir = 1;
+        min_spinner->disable();
+        max_spinner->disable();
+    }
 }
 
 //main: The main program
@@ -474,18 +509,21 @@ int main(int argc, char **argv) {
 
     /***** Control for colormap *****/
     GLUI_Panel *type_panel = new GLUI_Panel(obj_panel, "Colormap");
-    radio = new GLUI_RadioGroup(type_panel, &scalar_col, 1);
+    radio = new GLUI_RadioGroup(type_panel, &scalar_col, 1, control_radio);
     new GLUI_RadioButton(radio, "Black and white");
     new GLUI_RadioButton(radio, "Rainbow");
+    new GLUI_RadioButton(radio, "Fantasy");
     new GLUI_RadioButton(radio, "Color band");
 
-    min_spinner = new GLUI_Spinner(type_panel, "Min:", &test, 2, control_cb);
+    min_spinner = new GLUI_Spinner(type_panel, "Min:", &minimal, 2, control_cb);
     min_spinner->set_int_limits(2, 256);
     min_spinner->set_alignment(GLUI_ALIGN_LEFT);
+    min_spinner->disable();
 
-    max_spinner = new GLUI_Spinner(type_panel, "Max:", &test, 3, control_cb);
+    max_spinner = new GLUI_Spinner(type_panel, "Max:", &maximal, 3, control_cb);
     max_spinner->set_int_limits(2, 256);
     max_spinner->set_alignment(GLUI_ALIGN_LEFT);
+    max_spinner->disable();
 
     glutDisplayFunc(display);
     glutReshapeFunc(reshape);
