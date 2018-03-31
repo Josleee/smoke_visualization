@@ -320,6 +320,15 @@ void drawLegends() {
     glPopMatrix();
 
     glBegin(GL_LINES);
+    glColor3f(255, 255, 255);
+    glVertex2f(730, 230); //(x,y top left)
+    glVertex2f(760, 230); //(x,y bottom left)
+    glVertex2f(730, 500 + 230); //(x,y bottom right)
+    glVertex2f(760, 500 + 230); //(x,y top right)
+    glVertex2f(730, 230); //(x,y bottom right)
+    glVertex2f(730, 500 + 230); //(x,y bottom right)
+    glVertex2f(760, 230); //(x,y bottom left)
+    glVertex2f(760, 500 + 230); //(x,y bottom left)
     glEnd();
 }
 
