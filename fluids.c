@@ -36,7 +36,11 @@ float vec_scale = 1000;            //scaling of hedgehogs
 int draw_smoke = 1;           //draw the smoke or not
 float clamp_range = 1;
 int draw_vecs = 1;//draw the vector field or not
-int color_map_dataset = 1;
+int draw_vecs_dataset = 2;//vector field using different datasets
+const int vecs_v = 1;//use velocity dataset for vector fields
+const int vecs_f = 2;//use force dataset for vector fields
+
+int color_map_dataset = 2; // colormapping using different datasets
 const int color_rho = 2;//use density datasets
 const int color_v = 3;//use fluid velocity magnitude datasets
 const int color_f = 1;//use force field magnitude datasets
@@ -48,6 +52,12 @@ const int COLOR_BANDS = 3;
 int scalar_col = 1;           //method for scalar coloring
 int frozen = 0;               //toggles on/off the animation
 
+int vecs_min_x = 0; //choose between [0,DIM)
+int vecs_max_x = DIM;//choose between (0,DIM]
+int vecs_min_y = 0;//choose between [0,DIM)
+int vecs_max_y = DIM;//choose between (0,DIM]
+int number_vecs_in_x = 30;//choose between [1,DIM]
+int number_vecs_in_y = 30;//choose between [1,DIM]
 
 //------ SIMULATION CODE STARTS HERE -----------------------------------------------------------------
 
@@ -446,6 +456,7 @@ void visualize(void) {
              for (j = 0; j < DIM - 1; j++)            //draw smoke
              {
                  for (i = 0; i < DIM - 1; i++) {
+
                      px0 = wn + (fftw_real) i * wn;
                      py0 = hn + (fftw_real) j * hn;
 
@@ -490,58 +501,114 @@ void visualize(void) {
 
     }
     if (draw_vecs) {
+        double theta = PI / 4;
+        double matrixA[4] = {cos(theta), -sin(theta), sin(theta), cos(theta)};//counter clockwise rotation matrix
+        double matrixB[4] = {cos(theta), sin(theta), -sin(theta), cos(theta)};//clockwise rotation matrix
+        float vecs_location_x0 = vecs_min_x;
+        float vecs_location_x1 = vecs_max_x;
+        float vecs_location_y0 = vecs_min_y;
+        float vecs_location_y1 = vecs_max_y;
+        float unit_number_x = (vecs_location_x1 - vecs_location_x0) / number_vecs_in_x;
+        float unit_number_y = (vecs_location_y1 - vecs_location_y0) / number_vecs_in_y;
 
-        double theta=PI/4;
-//        float xhead;
-//        //create a matrix to rotate the velocity vector to get a arrow vector which is pi/4 angular with the velocity
-//        double a[2] = {cos(theta),sin(theta)};
-//        double b[2] = {-sin(theta),cos(theta)};
-        double matrixA[4] = {cos(theta),-sin(theta),sin(theta),cos(theta)};//counter clockwise rotation matrix
-        double matrixB[4] = {cos(theta),sin(theta),-sin(theta),cos(theta)};//clockwise rotation matrix
+        if (draw_vecs_dataset == 1) {
 
-        glBegin(GL_LINES);//draw velocities
-        for (i = 0; i < DIM; i+=2)
-            for (j = 0; j < DIM; j+=2) {
+            glBegin(GL_LINES);//draw velocities vector fields
+
+            for (i = vecs_location_x0; i < vecs_location_x1; i += unit_number_x)
+                for (j = vecs_location_y0; j < vecs_location_y1; j += unit_number_y) {
+
+
+                    idx = (j * DIM) + i;
+                    direction_to_color(vx[idx], vy[idx], color_dir);
+
+                    float x1 = wn + (fftw_real) i * wn;
+                    float y1 = hn + (fftw_real) j * hn;
+                    float x2 = (wn + (fftw_real) i * wn) + vec_scale * vx[idx];
+                    float y2 = (hn + (fftw_real) j * hn) + vec_scale * vy[idx];
+
+//                    float arrowhead[2] = {(wn + (fftw_real) i * wn + vec_scale * vx[idx]),
+//                                          (hn + (fftw_real) j * hn + vec_scale * vy[idx])};
+                    float arrow[2] = {x1 - x2, y1 - y2};
+
+                    float rotate_head_l1_x = arrow[0] * matrixA[0] + arrow[1] * matrixA[1];
+                    float rotate_head_l1_y = arrow[0] * matrixA[2] + arrow[1] * matrixA[3];
+                    float rotate_head_l1[2] = {(rotate_head_l1_x) / 3, (rotate_head_l1_y) / 3};
+
+                    float rotate_head_l2_x = arrow[0] * matrixB[0] + arrow[1] * matrixB[1];
+                    float rotate_head_l2_y = arrow[0] * matrixB[2] + arrow[1] * matrixB[3];
+                    float rotate_head_l2[2] = {(rotate_head_l2_x) / 3, (rotate_head_l2_y) / 3};
+
+                    float headvertex1x = (x2) + rotate_head_l1[0];
+                    float headvertex1y = (y2) + rotate_head_l1[1];
+                    float headvertex2x = (x2) + rotate_head_l2[0];
+                    float headvertex2y = (y2) + rotate_head_l2[1];
+
+
+                    glVertex2f(wn + (fftw_real) i * wn, hn + (fftw_real) j * hn);
+                    glVertex2f((wn + (fftw_real) i * wn) + vec_scale * vx[idx],
+                               (hn + (fftw_real) j * hn) + vec_scale * vy[idx]);
+
+                    glVertex2f((wn + (fftw_real) i * wn) + vec_scale * vx[idx],
+                               (hn + (fftw_real) j * hn) + vec_scale * vy[idx]);
+                    glVertex2f(headvertex1x, headvertex1y);
+
+                    glVertex2f((wn + (fftw_real) i * wn) + vec_scale * vx[idx],
+                               (hn + (fftw_real) j * hn) + vec_scale * vy[idx]);
+                    glVertex2f(headvertex2x, headvertex2y);
+
+                }
+            glEnd();
+
+    }else if(draw_vecs_dataset == 2) {
+
+        glBegin(GL_LINES);//draw force vector fields
+
+        for (i = vecs_location_x0; i < vecs_location_x1; i += unit_number_x)
+            for (j = vecs_location_y0; j < vecs_location_y1; j += unit_number_y) {
+
                 idx = (j * DIM) + i;
-                direction_to_color(vx[idx], vy[idx], color_dir);
+                direction_to_color(fx[idx], fy[idx], color_dir);
 
                 float x1 = wn + (fftw_real) i * wn;
-                float y1 =  hn + (fftw_real) j * hn;
-                float x2 = (wn + (fftw_real) i * wn) + vec_scale * vx[idx];
-                float y2 = (hn + (fftw_real) j * hn) + vec_scale * vy[idx];
+                float y1 = hn + (fftw_real) j * hn;
+                float x2 = (wn + (fftw_real) i * wn) + vec_scale * fx[idx];
+                float y2 = (hn + (fftw_real) j * hn) + vec_scale * fy[idx];
 
-                float arrowhead[2] = {(wn + (fftw_real) i * wn + vec_scale * vx[idx]), (hn + (fftw_real) j * hn + vec_scale * vy[idx])};
-                float arrow[2] = {x1-x2,y1-y2};
+//                    float arrowhead[2] = {(wn + (fftw_real) i * wn + vec_scale * vx[idx]),
+//                                          (hn + (fftw_real) j * hn + vec_scale * vy[idx])};
+                float arrow[2] = {x1 - x2, y1 - y2};
 
                 float rotate_head_l1_x = arrow[0] * matrixA[0] + arrow[1] * matrixA[1];
                 float rotate_head_l1_y = arrow[0] * matrixA[2] + arrow[1] * matrixA[3];
-                float rotate_head_l1[2] = {(rotate_head_l1_x)/3,(rotate_head_l1_y)/3};
+                float rotate_head_l1[2] = {(rotate_head_l1_x) / 3, (rotate_head_l1_y) / 3};
 
                 float rotate_head_l2_x = arrow[0] * matrixB[0] + arrow[1] * matrixB[1];
                 float rotate_head_l2_y = arrow[0] * matrixB[2] + arrow[1] * matrixB[3];
-                float rotate_head_l2[2] = {(rotate_head_l2_x)/3,(rotate_head_l2_y)/3};
+                float rotate_head_l2[2] = {(rotate_head_l2_x) / 3, (rotate_head_l2_y) / 3};
 
-                float headvertex1x = (x2)+rotate_head_l1[0];
-                float headvertex1y = (y2)+rotate_head_l1[1];
-                float headvertex2x = (x2)+rotate_head_l2[0];
-                float headvertex2y = (y2)+rotate_head_l2[1];
+                float headvertex1x = (x2) + rotate_head_l1[0];
+                float headvertex1y = (y2) + rotate_head_l1[1];
+                float headvertex2x = (x2) + rotate_head_l2[0];
+                float headvertex2y = (y2) + rotate_head_l2[1];
 
 
-                 glVertex2f(wn + (fftw_real) i * wn, hn + (fftw_real) j * hn);
-                 glVertex2f((wn + (fftw_real) i * wn) + vec_scale * vx[idx],
-                           (hn + (fftw_real) j * hn) + vec_scale * vy[idx]);
+                glVertex2f(wn + (fftw_real) i * wn, hn + (fftw_real) j * hn);
+                glVertex2f((wn + (fftw_real) i * wn) + vec_scale * fx[idx],
+                           (hn + (fftw_real) j * hn) + vec_scale * fy[idx]);
 
-                 glVertex2f((wn + (fftw_real) i * wn) + vec_scale * vx[idx],
-                           (hn + (fftw_real) j * hn) + vec_scale * vy[idx]);
-                 glVertex2f(headvertex1x,headvertex1y);
-//
-                 glVertex2f((wn + (fftw_real) i * wn) + vec_scale * vx[idx],
-                           (hn + (fftw_real) j * hn) + vec_scale * vy[idx]);
-                 glVertex2f(headvertex2x,headvertex2y);
+                glVertex2f((wn + (fftw_real) i * wn) + vec_scale * fx[idx],
+                           (hn + (fftw_real) j * hn) + vec_scale * fy[idx]);
+                glVertex2f(headvertex1x, headvertex1y);
 
+                glVertex2f((wn + (fftw_real) i * wn) + vec_scale * fx[idx],
+                           (hn + (fftw_real) j * hn) + vec_scale * fy[idx]);
+                glVertex2f(headvertex2x, headvertex2y);
 
             }
         glEnd();
+
+    }
     }
 
 drawLegends();
