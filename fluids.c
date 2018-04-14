@@ -9,11 +9,14 @@
 #include <string.h>
 #include <glui.h>
 #include <vector>
+
 #define PI 3.14159265
 #define WINDOW_TITLE_PREFIX "Real Time Fluid Flow Simulation Step3"
 /** These are the live variables passed into GLUI ***/
 int main_window;
 GLUI_RadioGroup *radio;
+GLUI_RadioGroup *radio2;
+GLUI_RadioGroup *radio3;
 GLUI_Spinner *min_spinner, *max_spinner;
 int minimal = 1, maximal = 256;
 
@@ -349,202 +352,255 @@ void visualize(void) {
     fftw_real hn = (fftw_real) winHeight / (fftw_real) (DIM + 1);  // Grid cell heigh
 
 
-    if (draw_smoke == 1 ) {
-         if(color_map_dataset == 1) {
-             //when dataset is velocity magnitude
-             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-             glBegin(GL_TRIANGLES);
+    if (draw_smoke == 1) {
+        if (color_map_dataset == 1) {
+            //when dataset is velocity magnitude
+            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+            glBegin(GL_TRIANGLES);
 
-             for (j = 0; j < DIM - 1; j++)            //draw smoke
-             {
-                 for (i = 0; i < DIM - 1; i++) {
-                     px0 = wn + (fftw_real) i * wn;
-                     py0 = hn + (fftw_real) j * hn;
+            for (j = 0; j < DIM - 1; j++)            //draw smoke
+            {
+                for (i = 0; i < DIM - 1; i++) {
+                    px0 = wn + (fftw_real) i * wn;
+                    py0 = hn + (fftw_real) j * hn;
 
-                     idx0 = (j * DIM) + i;
+                    idx0 = (j * DIM) + i;
 
-                     px1 = wn + (fftw_real) i * wn;
-                     py1 = hn + (fftw_real) (j + 1) * hn;
-                     idx1 = ((j + 1) * DIM) + i;
+                    px1 = wn + (fftw_real) i * wn;
+                    py1 = hn + (fftw_real) (j + 1) * hn;
+                    idx1 = ((j + 1) * DIM) + i;
 
-                     px2 = wn + (fftw_real) (i + 1) * wn;
-                     py2 = hn + (fftw_real) (j + 1) * hn;
-                     idx2 = ((j + 1) * DIM) + (i + 1);
+                    px2 = wn + (fftw_real) (i + 1) * wn;
+                    py2 = hn + (fftw_real) (j + 1) * hn;
+                    idx2 = ((j + 1) * DIM) + (i + 1);
 
-                     px3 = wn + (fftw_real) (i + 1) * wn;
-                     py3 = hn + (fftw_real) j * hn;
-                     idx3 = (j * DIM) + (i + 1);
-
-
-                     float f_mag0 = (sqrt(pow(fx[idx0], 2) + pow(fy[idx0], 2)))*50;
-                     float f_mag1 = (sqrt(pow(fx[idx1], 2) + pow(fy[idx1], 2)))*50;
-                     float f_mag2 = (sqrt(pow(fx[idx2], 2) + pow(fy[idx2], 2)))*50;
-                     float f_mag3 = (sqrt(pow(fx[idx3], 2) + pow(fy[idx3], 2)))*50;
+                    px3 = wn + (fftw_real) (i + 1) * wn;
+                    py3 = hn + (fftw_real) j * hn;
+                    idx3 = (j * DIM) + (i + 1);
 
 
-                     set_colormap(f_mag0);
-                     glVertex2f(px0, py0);
-                     set_colormap(f_mag1);
-                     glVertex2f(px1, py1);
-                     set_colormap(f_mag2);
-                     glVertex2f(px2, py2);
-
-                     set_colormap(f_mag0);
-                     glVertex2f(px0, py0);
-                     set_colormap(f_mag2);
-                     glVertex2f(px2, py2);
-                     set_colormap(f_mag3);
-                     glVertex2f(px3, py3);
-                 }
-             }
-             glEnd();
-        }else if(color_map_dataset == 2){
-             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-             glBegin(GL_TRIANGLES);
-
-             for (j = 0; j < DIM - 1; j++)            //draw smoke
-             {
-                 for (i = 0; i < DIM - 1; i++) {
-                     px0 = wn + (fftw_real) i * wn;
-                     py0 = hn + (fftw_real) j * hn;
-
-                     idx0 = (j * DIM) + i;
-
-                     px1 = wn + (fftw_real) i * wn;
-                     py1 = hn + (fftw_real) (j + 1) * hn;
-                     idx1 = ((j + 1) * DIM) + i;
-
-                     px2 = wn + (fftw_real) (i + 1) * wn;
-                     py2 = hn + (fftw_real) (j + 1) * hn;
-                     idx2 = ((j + 1) * DIM) + (i + 1);
-
-                     px3 = wn + (fftw_real) (i + 1) * wn;
-                     py3 = hn + (fftw_real) j * hn;
-                     idx3 = (j * DIM) + (i + 1);
-
-                     set_colormap(rho[idx0]);
-                     glVertex2f(px0, py0);
-                     set_colormap(rho[idx1]);
-                     glVertex2f(px1, py1);
-                     set_colormap(rho[idx2]);
-                     glVertex2f(px2, py2);
-
-                     set_colormap(rho[idx0]);
-                     glVertex2f(px0, py0);
-                     set_colormap(rho[idx2]);
-                     glVertex2f(px2, py2);
-                     set_colormap(rho[idx3]);
-                     glVertex2f(px3, py3);
-                 }
-             }
-             glEnd();
-         }else if(color_map_dataset == 3){
-             //when dataset is velocity magnitude
-             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-             glBegin(GL_TRIANGLES);
-
-             for (j = 0; j < DIM - 1; j++)            //draw smoke
-             {
-                 for (i = 0; i < DIM - 1; i++) {
-                     px0 = wn + (fftw_real) i * wn;
-                     py0 = hn + (fftw_real) j * hn;
-
-                     idx0 = (j * DIM) + i;
-
-                     px1 = wn + (fftw_real) i * wn;
-                     py1 = hn + (fftw_real) (j + 1) * hn;
-                     idx1 = ((j + 1) * DIM) + i;
-
-                     px2 = wn + (fftw_real) (i + 1) * wn;
-                     py2 = hn + (fftw_real) (j + 1) * hn;
-                     idx2 = ((j + 1) * DIM) + (i + 1);
-
-                     px3 = wn + (fftw_real) (i + 1) * wn;
-                     py3 = hn + (fftw_real) j * hn;
-                     idx3 = (j * DIM) + (i + 1);
+                    float f_mag0 = (sqrt(pow(fx[idx0], 2) + pow(fy[idx0], 2))) * 50;
+                    float f_mag1 = (sqrt(pow(fx[idx1], 2) + pow(fy[idx1], 2))) * 50;
+                    float f_mag2 = (sqrt(pow(fx[idx2], 2) + pow(fy[idx2], 2))) * 50;
+                    float f_mag3 = (sqrt(pow(fx[idx3], 2) + pow(fy[idx3], 2))) * 50;
 
 
-                     float v_mag0 = (sqrt(pow(vx[idx0], 2) + pow(vy[idx0], 2)))*50;
-                     float v_mag1 = (sqrt(pow(vx[idx1], 2) + pow(vy[idx1], 2)))*50;
-                     float v_mag2 = (sqrt(pow(vx[idx2], 2) + pow(vy[idx2], 2)))*50;
-                     float v_mag3 = (sqrt(pow(vx[idx3], 2) + pow(vy[idx3], 2)))*50;
+                    set_colormap(f_mag0);
+                    glVertex2f(px0, py0);
+                    set_colormap(f_mag1);
+                    glVertex2f(px1, py1);
+                    set_colormap(f_mag2);
+                    glVertex2f(px2, py2);
+
+                    set_colormap(f_mag0);
+                    glVertex2f(px0, py0);
+                    set_colormap(f_mag2);
+                    glVertex2f(px2, py2);
+                    set_colormap(f_mag3);
+                    glVertex2f(px3, py3);
+                }
+            }
+            glEnd();
+        } else if (color_map_dataset == 2) {
+            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+            glBegin(GL_TRIANGLES);
+
+            for (j = 0; j < DIM - 1; j++)            //draw smoke
+            {
+                for (i = 0; i < DIM - 1; i++) {
+                    px0 = wn + (fftw_real) i * wn;
+                    py0 = hn + (fftw_real) j * hn;
+
+                    idx0 = (j * DIM) + i;
+
+                    px1 = wn + (fftw_real) i * wn;
+                    py1 = hn + (fftw_real) (j + 1) * hn;
+                    idx1 = ((j + 1) * DIM) + i;
+
+                    px2 = wn + (fftw_real) (i + 1) * wn;
+                    py2 = hn + (fftw_real) (j + 1) * hn;
+                    idx2 = ((j + 1) * DIM) + (i + 1);
+
+                    px3 = wn + (fftw_real) (i + 1) * wn;
+                    py3 = hn + (fftw_real) j * hn;
+                    idx3 = (j * DIM) + (i + 1);
+
+                    set_colormap(rho[idx0]);
+                    glVertex2f(px0, py0);
+                    set_colormap(rho[idx1]);
+                    glVertex2f(px1, py1);
+                    set_colormap(rho[idx2]);
+                    glVertex2f(px2, py2);
+
+                    set_colormap(rho[idx0]);
+                    glVertex2f(px0, py0);
+                    set_colormap(rho[idx2]);
+                    glVertex2f(px2, py2);
+                    set_colormap(rho[idx3]);
+                    glVertex2f(px3, py3);
+                }
+            }
+            glEnd();
+        } else if (color_map_dataset == 3) {
+            //when dataset is velocity magnitude
+            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+            glBegin(GL_TRIANGLES);
+
+            for (j = 0; j < DIM - 1; j++)            //draw smoke
+            {
+                for (i = 0; i < DIM - 1; i++) {
+                    px0 = wn + (fftw_real) i * wn;
+                    py0 = hn + (fftw_real) j * hn;
+
+                    idx0 = (j * DIM) + i;
+
+                    px1 = wn + (fftw_real) i * wn;
+                    py1 = hn + (fftw_real) (j + 1) * hn;
+                    idx1 = ((j + 1) * DIM) + i;
+
+                    px2 = wn + (fftw_real) (i + 1) * wn;
+                    py2 = hn + (fftw_real) (j + 1) * hn;
+                    idx2 = ((j + 1) * DIM) + (i + 1);
+
+                    px3 = wn + (fftw_real) (i + 1) * wn;
+                    py3 = hn + (fftw_real) j * hn;
+                    idx3 = (j * DIM) + (i + 1);
 
 
-                     set_colormap(v_mag0);
-                     glVertex2f(px0, py0);
-                     set_colormap(v_mag1);
-                     glVertex2f(px1, py1);
-                     set_colormap(v_mag2);
-                     glVertex2f(px2, py2);
+                    float v_mag0 = (sqrt(pow(vx[idx0], 2) + pow(vy[idx0], 2))) * 50;
+                    float v_mag1 = (sqrt(pow(vx[idx1], 2) + pow(vy[idx1], 2))) * 50;
+                    float v_mag2 = (sqrt(pow(vx[idx2], 2) + pow(vy[idx2], 2))) * 50;
+                    float v_mag3 = (sqrt(pow(vx[idx3], 2) + pow(vy[idx3], 2))) * 50;
 
-                     set_colormap(v_mag0);
-                     glVertex2f(px0, py0);
-                     set_colormap(v_mag2);
-                     glVertex2f(px2, py2);
-                     set_colormap(v_mag3);
-                     glVertex2f(px3, py3);
-                 }
-             }
-             glEnd();
-         }
+
+                    set_colormap(v_mag0);
+                    glVertex2f(px0, py0);
+                    set_colormap(v_mag1);
+                    glVertex2f(px1, py1);
+                    set_colormap(v_mag2);
+                    glVertex2f(px2, py2);
+
+                    set_colormap(v_mag0);
+                    glVertex2f(px0, py0);
+                    set_colormap(v_mag2);
+                    glVertex2f(px2, py2);
+                    set_colormap(v_mag3);
+                    glVertex2f(px3, py3);
+                }
+            }
+            glEnd();
+        }
 
     }
-    if (draw_vecs) {
+    if (draw_vecs == 1) {
 
-        double theta=PI/4;
+        double theta = PI / 4;
 //        float xhead;
 //        //create a matrix to rotate the velocity vector to get a arrow vector which is pi/4 angular with the velocity
 //        double a[2] = {cos(theta),sin(theta)};
 //        double b[2] = {-sin(theta),cos(theta)};
-        double matrixA[4] = {cos(theta),-sin(theta),sin(theta),cos(theta)};//counter clockwise rotation matrix
-        double matrixB[4] = {cos(theta),sin(theta),-sin(theta),cos(theta)};//clockwise rotation matrix
+        double matrixA[4] = {cos(theta), -sin(theta), sin(theta), cos(theta)};//counter clockwise rotation matrix
+        double matrixB[4] = {cos(theta), sin(theta), -sin(theta), cos(theta)};//clockwise rotation matrix
 
         glBegin(GL_LINES);//draw velocities
-        for (i = 0; i < DIM; i+=2)
-            for (j = 0; j < DIM; j+=2) {
+        for (i = 0; i < DIM; i += 2)
+            for (j = 0; j < DIM; j += 2) {
                 idx = (j * DIM) + i;
                 direction_to_color(vx[idx], vy[idx], color_dir);
 
                 float x1 = wn + (fftw_real) i * wn;
-                float y1 =  hn + (fftw_real) j * hn;
+                float y1 = hn + (fftw_real) j * hn;
                 float x2 = (wn + (fftw_real) i * wn) + vec_scale * vx[idx];
                 float y2 = (hn + (fftw_real) j * hn) + vec_scale * vy[idx];
 
-                float arrowhead[2] = {(wn + (fftw_real) i * wn + vec_scale * vx[idx]), (hn + (fftw_real) j * hn + vec_scale * vy[idx])};
-                float arrow[2] = {x1-x2,y1-y2};
+                float arrowhead[2] = {(wn + (fftw_real) i * wn + vec_scale * vx[idx]),
+                                      (hn + (fftw_real) j * hn + vec_scale * vy[idx])};
+                float arrow[2] = {x1 - x2, y1 - y2};
 
                 float rotate_head_l1_x = arrow[0] * matrixA[0] + arrow[1] * matrixA[1];
                 float rotate_head_l1_y = arrow[0] * matrixA[2] + arrow[1] * matrixA[3];
-                float rotate_head_l1[2] = {(rotate_head_l1_x)/3,(rotate_head_l1_y)/3};
+                float rotate_head_l1[2] = {(rotate_head_l1_x) / 3, (rotate_head_l1_y) / 3};
 
                 float rotate_head_l2_x = arrow[0] * matrixB[0] + arrow[1] * matrixB[1];
                 float rotate_head_l2_y = arrow[0] * matrixB[2] + arrow[1] * matrixB[3];
-                float rotate_head_l2[2] = {(rotate_head_l2_x)/3,(rotate_head_l2_y)/3};
+                float rotate_head_l2[2] = {(rotate_head_l2_x) / 3, (rotate_head_l2_y) / 3};
 
-                float headvertex1x = (x2)+rotate_head_l1[0];
-                float headvertex1y = (y2)+rotate_head_l1[1];
-                float headvertex2x = (x2)+rotate_head_l2[0];
-                float headvertex2y = (y2)+rotate_head_l2[1];
+                float headvertex1x = (x2) + rotate_head_l1[0];
+                float headvertex1y = (y2) + rotate_head_l1[1];
+                float headvertex2x = (x2) + rotate_head_l2[0];
+                float headvertex2y = (y2) + rotate_head_l2[1];
 
 
-                 glVertex2f(wn + (fftw_real) i * wn, hn + (fftw_real) j * hn);
-                 glVertex2f((wn + (fftw_real) i * wn) + vec_scale * vx[idx],
+                glVertex2f(wn + (fftw_real) i * wn, hn + (fftw_real) j * hn);
+                glVertex2f((wn + (fftw_real) i * wn) + vec_scale * vx[idx],
                            (hn + (fftw_real) j * hn) + vec_scale * vy[idx]);
 
-                 glVertex2f((wn + (fftw_real) i * wn) + vec_scale * vx[idx],
+                glVertex2f((wn + (fftw_real) i * wn) + vec_scale * vx[idx],
                            (hn + (fftw_real) j * hn) + vec_scale * vy[idx]);
-                 glVertex2f(headvertex1x,headvertex1y);
+                glVertex2f(headvertex1x, headvertex1y);
 //
-                 glVertex2f((wn + (fftw_real) i * wn) + vec_scale * vx[idx],
+                glVertex2f((wn + (fftw_real) i * wn) + vec_scale * vx[idx],
                            (hn + (fftw_real) j * hn) + vec_scale * vy[idx]);
-                 glVertex2f(headvertex2x,headvertex2y);
+                glVertex2f(headvertex2x, headvertex2y);
+
+
+            }
+        glEnd();
+
+        /** Gradient **/
+    } else if (draw_vecs == 2) {
+
+        double theta = PI / 4;
+        double matrixA[4] = {cos(theta), -sin(theta), sin(theta), cos(theta)};//counter clockwise rotation matrix
+        double matrixB[4] = {cos(theta), sin(theta), -sin(theta), cos(theta)};//clockwise rotation matrix
+
+        glBegin(GL_LINES);//draw velocities
+        for (i = 0; i < DIM; i += 2)
+            for (j = 0; j < DIM; j += 2) {
+                idx = (j * DIM) + i;
+                direction_to_color(vx[idx], vy[idx], color_dir);
+
+                float x1 = wn + (fftw_real) i * wn;
+                float y1 = hn + (fftw_real) j * hn;
+                float x2 = (wn + (fftw_real) i * wn) + vec_scale * vx[idx];
+                float y2 = (hn + (fftw_real) j * hn) + vec_scale * vy[idx];
+
+                float arrowhead[2] = {(wn + (fftw_real) i * wn + vec_scale * vx[idx]),
+                                      (hn + (fftw_real) j * hn + vec_scale * vy[idx])};
+                float arrow[2] = {x1 - x2, y1 - y2};
+
+                float rotate_head_l1_x = arrow[0] * matrixA[0] + arrow[1] * matrixA[1];
+                float rotate_head_l1_y = arrow[0] * matrixA[2] + arrow[1] * matrixA[3];
+                float rotate_head_l1[2] = {(rotate_head_l1_x) / 3, (rotate_head_l1_y) / 3};
+
+                float rotate_head_l2_x = arrow[0] * matrixB[0] + arrow[1] * matrixB[1];
+                float rotate_head_l2_y = arrow[0] * matrixB[2] + arrow[1] * matrixB[3];
+                float rotate_head_l2[2] = {(rotate_head_l2_x) / 3, (rotate_head_l2_y) / 3};
+
+                float headvertex1x = (x2) + rotate_head_l1[0];
+                float headvertex1y = (y2) + rotate_head_l1[1];
+                float headvertex2x = (x2) + rotate_head_l2[0];
+                float headvertex2y = (y2) + rotate_head_l2[1];
+
+
+                glVertex2f(wn + (fftw_real) i * wn, hn + (fftw_real) j * hn);
+                glVertex2f((wn + (fftw_real) i * wn) + vec_scale * vx[idx],
+                           (hn + (fftw_real) j * hn) + vec_scale * vy[idx]);
+
+                glVertex2f((wn + (fftw_real) i * wn) + vec_scale * vx[idx],
+                           (hn + (fftw_real) j * hn) + vec_scale * vy[idx]);
+                glVertex2f(headvertex1x, headvertex1y);
+
+                glVertex2f((wn + (fftw_real) i * wn) + vec_scale * vx[idx],
+                           (hn + (fftw_real) j * hn) + vec_scale * vy[idx]);
+                glVertex2f(headvertex2x, headvertex2y);
 
 
             }
         glEnd();
     }
 
-drawLegends();
+    drawLegends();
 }
 
 
@@ -704,14 +760,14 @@ int main(int argc, char **argv) {
 
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE | GLUT_DEPTH);
-    glutInitWindowSize(800, 800);
+    glutInitWindowSize(1000, 800);
 
     main_window = glutCreateWindow(WINDOW_TITLE_PREFIX);
 
     /*** Create the side subwindow ***/
-    GLUI *glui = GLUI_Master.create_glui_subwindow(main_window, GLUI_SUBWINDOW_BOTTOM);
+    GLUI *glui = GLUI_Master.create_glui_subwindow(main_window, GLUI_SUBWINDOW_LEFT);
     GLUI_Panel *obj_panel = new
-    GLUI_Rollout(glui, "Colormap", true);
+    GLUI_Rollout(glui, "Step 2", true);
 
     /***** Control for colormap *****/
     GLUI_Panel *type_panel = new
@@ -730,14 +786,42 @@ int main(int argc, char **argv) {
     min_spinner = new
     GLUI_Spinner(type_panel, "Min:", &minimal, 2, control_cb);
     min_spinner->set_int_limits(2, 256);
-    min_spinner->set_alignment(GLUI_ALIGN_LEFT);
+//    min_spinner->set_alignment(GLUI_ALIGN_LEFT);
     min_spinner->disable();
 
     max_spinner = new
     GLUI_Spinner(type_panel, "Max:", &maximal, 3, control_cb);
     max_spinner->set_int_limits(2, 256);
-    max_spinner->set_alignment(GLUI_ALIGN_LEFT);
+//    max_spinner->set_alignment(GLUI_ALIGN_LEFT);
     max_spinner->disable();
+
+    /***** Control for dataset *****/
+    GLUI_Panel *set_panel = new
+    GLUI_Panel(obj_panel, "Colormap dataset");
+    radio2 = new
+    GLUI_RadioGroup(set_panel, &color_map_dataset, 1, control_radio);
+    new
+    GLUI_RadioButton(radio2, "Black and white");
+    new
+    GLUI_RadioButton(radio2, "Rainbow");
+    new
+    GLUI_RadioButton(radio2, "Fantasy");
+    new
+    GLUI_RadioButton(radio2, "Fantasy");
+
+    GLUI_Panel *vecs_panel = new
+    GLUI_Panel(obj_panel, "Draw vectors");
+    radio3 = new
+    GLUI_RadioGroup(vecs_panel, &draw_vecs, 1, control_radio);
+    new
+    GLUI_RadioButton(radio3, "None");
+    new
+    GLUI_RadioButton(radio3, "Normal");
+    new
+    GLUI_RadioButton(radio3, "Gradient");
+
+    GLUI_Panel *obj_panel2 = new
+    GLUI_Rollout(glui, "Step 4", true);
 
     glutDisplayFunc(display);
     glutReshapeFunc(reshape);
