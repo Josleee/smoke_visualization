@@ -38,7 +38,7 @@ int color_dir = 1;            //use direction color-coding or not
 float vec_scale = 1000;            //scaling of hedgehogs
 int draw_smoke = 1;           //draw the smoke or not
 float clamp_range = 1;
-int draw_vecs = 1;//draw the vector field or not
+int draw_vecs = 2;//draw the vector field or not
 int color_map_dataset = 1;
 const int color_rho = 2;//use density datasets
 const int color_v = 3;//use fluid velocity magnitude datasets
@@ -503,6 +503,7 @@ void visualize(void) {
         double matrixB[4] = {cos(theta), sin(theta), -sin(theta), cos(theta)};//clockwise rotation matrix
 
         glBegin(GL_LINES);//draw velocities
+
         for (i = 0; i < DIM; i += 2)
             for (j = 0; j < DIM; j += 2) {
                 idx = (j * DIM) + i;
@@ -543,60 +544,96 @@ void visualize(void) {
                            (hn + (fftw_real) j * hn) + vec_scale * vy[idx]);
                 glVertex2f(headvertex2x, headvertex2y);
 
-
             }
         glEnd();
 
-        /** Gradient **/
     } else if (draw_vecs == 2) {
+        /** Gradient **/
 
         double theta = PI / 4;
         double matrixA[4] = {cos(theta), -sin(theta), sin(theta), cos(theta)};//counter clockwise rotation matrix
         double matrixB[4] = {cos(theta), sin(theta), -sin(theta), cos(theta)};//clockwise rotation matrix
 
         glBegin(GL_LINES);//draw velocities
-        for (i = 0; i < DIM; i += 2)
-            for (j = 0; j < DIM; j += 2) {
-                idx = (j * DIM) + i;
-                direction_to_color(vx[idx], vy[idx], color_dir);
 
-                float x1 = wn + (fftw_real) i * wn;
-                float y1 = hn + (fftw_real) j * hn;
-                float x2 = (wn + (fftw_real) i * wn) + vec_scale * vx[idx];
-                float y2 = (hn + (fftw_real) j * hn) + vec_scale * vy[idx];
+        for (j = 0; j < DIM - 1; j += 2) {
+            for (i = 0; i < DIM - 1; i += 2) {
+                px0 = wn + (fftw_real) i * wn;
+                py0 = hn + (fftw_real) j * hn;
 
-                float arrowhead[2] = {(wn + (fftw_real) i * wn + vec_scale * vx[idx]),
-                                      (hn + (fftw_real) j * hn + vec_scale * vy[idx])};
-                float arrow[2] = {x1 - x2, y1 - y2};
+                idx0 = (j * DIM) + i;
 
-                float rotate_head_l1_x = arrow[0] * matrixA[0] + arrow[1] * matrixA[1];
-                float rotate_head_l1_y = arrow[0] * matrixA[2] + arrow[1] * matrixA[3];
-                float rotate_head_l1[2] = {(rotate_head_l1_x) / 3, (rotate_head_l1_y) / 3};
+                px1 = wn + (fftw_real) i * wn;
+                py1 = hn + (fftw_real) (j + 1) * hn;
 
-                float rotate_head_l2_x = arrow[0] * matrixB[0] + arrow[1] * matrixB[1];
-                float rotate_head_l2_y = arrow[0] * matrixB[2] + arrow[1] * matrixB[3];
-                float rotate_head_l2[2] = {(rotate_head_l2_x) / 3, (rotate_head_l2_y) / 3};
+                idx1 = ((j + 1) * DIM) + i;
 
-                float headvertex1x = (x2) + rotate_head_l1[0];
-                float headvertex1y = (y2) + rotate_head_l1[1];
-                float headvertex2x = (x2) + rotate_head_l2[0];
-                float headvertex2y = (y2) + rotate_head_l2[1];
+                px2 = wn + (fftw_real) (i + 1) * wn;
+                py2 = hn + (fftw_real) (j + 1) * hn;
 
+                idx2 = ((j + 1) * DIM) + (i + 1);
 
-                glVertex2f(wn + (fftw_real) i * wn, hn + (fftw_real) j * hn);
-                glVertex2f((wn + (fftw_real) i * wn) + vec_scale * vx[idx],
-                           (hn + (fftw_real) j * hn) + vec_scale * vy[idx]);
+                px3 = wn + (fftw_real) (i + 1) * wn;
+                py3 = hn + (fftw_real) j * hn;
 
-                glVertex2f((wn + (fftw_real) i * wn) + vec_scale * vx[idx],
-                           (hn + (fftw_real) j * hn) + vec_scale * vy[idx]);
+                idx3 = (j * DIM) + (i + 1);
+
+                fftw_real d_x = 100 * (-rho[idx0] + rho[idx3] - rho[idx1] + rho[idx2]);
+                fftw_real d_y = 100 * (rho[idx1] - rho[idx0] + rho[idx2] - rho[idx3]);
+                fftw_real threshold = 10;
+
+                if (fabs(d_x) >= fabs(d_y)) {
+                    if (d_x >= threshold) {
+                        d_y = d_y * threshold / d_x;
+                        d_x = threshold;
+                    } else if (d_x <= -threshold) {
+                        d_y = -d_y * threshold / d_x;
+                        d_x = -threshold;
+                    }
+                } else {
+                    if (d_y >= threshold) {
+                        d_x = d_x * threshold / d_y;
+                        d_y = threshold;
+                    } else if (d_y <= -threshold) {
+                        d_x = -d_x * threshold / d_y;
+                        d_y = -threshold;
+                    }
+                }
+
+                fftw_real pxm = (px0 + px1 + px2 + px3) / 4;
+                fftw_real pym = (py0 + py1 + py2 + py3) / 4;
+
+                set_colormap(rho[idx0]);
+                glVertex2f(pxm, pym);
+
+                set_colormap(rho[idx1]);
+                glVertex2f(pxm + d_x, pym + d_y);
+
+                fftw_real pxn = pxm + d_x;
+                fftw_real pyn = pym + d_y;
+
+                fftw_real arrow[2] = {pxm - pxn, pym - pyn};
+
+                fftw_real rotate_head_l1_x = arrow[0] * matrixA[0] + arrow[1] * matrixA[1];
+                fftw_real rotate_head_l1_y = arrow[0] * matrixA[2] + arrow[1] * matrixA[3];
+                fftw_real rotate_head_l1[2] = {(rotate_head_l1_x) / 3, (rotate_head_l1_y) / 3};
+
+                fftw_real rotate_head_l2_x = arrow[0] * matrixB[0] + arrow[1] * matrixB[1];
+                fftw_real rotate_head_l2_y = arrow[0] * matrixB[2] + arrow[1] * matrixB[3];
+                fftw_real rotate_head_l2[2] = {(rotate_head_l2_x) / 3, (rotate_head_l2_y) / 3};
+
+                fftw_real headvertex1x = (pxn) + rotate_head_l1[0];
+                fftw_real headvertex1y = (pyn) + rotate_head_l1[1];
+                fftw_real headvertex2x = (pxn) + rotate_head_l2[0];
+                fftw_real headvertex2y = (pyn) + rotate_head_l2[1];
+
+                glVertex2f(pxm + d_x, pym + d_y);
                 glVertex2f(headvertex1x, headvertex1y);
 
-                glVertex2f((wn + (fftw_real) i * wn) + vec_scale * vx[idx],
-                           (hn + (fftw_real) j * hn) + vec_scale * vy[idx]);
+                glVertex2f(pxm + d_x, pym + d_y);
                 glVertex2f(headvertex2x, headvertex2y);
-
-
             }
+        }
         glEnd();
     }
 
