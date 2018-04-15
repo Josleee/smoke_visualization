@@ -305,6 +305,9 @@ void drawLegends() {
     glMatrixMode(GL_MODELVIEW);
     glPushMatrix();
     glBegin(GL_QUADS);
+    float pTop = 165;
+    float pLeft = 715;
+    float pRight = 750;
 
     for (int i = 0; i < 1001; i = i + 1) {
         float vy = 0.001 * i;
@@ -322,10 +325,10 @@ void drawLegends() {
         }
 
         set_colormap(vy);
-        glVertex2f(730, (0.5 * i) + 230); //(x,y top left)
-        glVertex2f(760, (0.5 * i) + 230); //(x,y bottom left)
-        glVertex2f(730, (0.5 * (i + 1)) + 230); //(x,y bottom right)
-        glVertex2f(760, (0.5 * (i + 1)) + 230); //(x,y top right)
+        glVertex2f(pLeft, (0.5 * i) + pTop); //(x,y top left)
+        glVertex2f(pRight, (0.5 * i) + pTop); //(x,y bottom left)
+        glVertex2f(pLeft, (0.5 * (i + 1)) + pTop); //(x,y bottom right)
+        glVertex2f(pRight, (0.5 * (i + 1)) + pTop); //(x,y top right)
     }
 
     glEnd();
@@ -333,14 +336,14 @@ void drawLegends() {
 
     glBegin(GL_LINES);
     glColor3f(255, 255, 255);
-    glVertex2f(730, 230); //(x,y top left)
-    glVertex2f(760, 230); //(x,y bottom left)
-    glVertex2f(730, 500 + 230); //(x,y bottom right)
-    glVertex2f(760, 500 + 230); //(x,y top right)
-    glVertex2f(730, 230); //(x,y bottom right)
-    glVertex2f(730, 500 + 230); //(x,y bottom right)
-    glVertex2f(760, 230); //(x,y bottom left)
-    glVertex2f(760, 500 + 230); //(x,y bottom left)
+    glVertex2f(pLeft, pTop); //(x,y top left)
+    glVertex2f(pRight, pTop); //(x,y bottom left)
+    glVertex2f(pLeft, 500 + pTop); //(x,y bottom right)
+    glVertex2f(pRight, 500 + pTop); //(x,y top right)
+    glVertex2f(pLeft, pTop); //(x,y bottom right)
+    glVertex2f(pLeft, 500 + pTop); //(x,y bottom right)
+    glVertex2f(pRight, pTop); //(x,y bottom left)
+    glVertex2f(pRight, 500 + pTop); //(x,y bottom left)
     glEnd();
 }
 
@@ -761,11 +764,12 @@ void display(void) {
 
 //reshape: Handle window resizing (reshaping) events
 void reshape(int w, int h) {
-    glViewport(0.0f, 0.0f, (GLfloat) w, (GLfloat) h);
+    float panel_length = 215;
+    glViewport(0.0f, 0.0f, (GLfloat) w - panel_length, (GLfloat) h);
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    gluOrtho2D(0.0, (GLdouble) w, 0.0, (GLdouble) h);
-    winWidth = w;
+    gluOrtho2D(0.0, (GLdouble) w - panel_length, 0.0, (GLdouble) h);
+    winWidth = w - panel_length;
     winHeight = h;
 }
 
@@ -900,7 +904,7 @@ int main(int argc, char **argv) {
     main_window = glutCreateWindow(WINDOW_TITLE_PREFIX);
 
     /*** Create the side subwindow ***/
-    GLUI *glui = GLUI_Master.create_glui_subwindow(main_window, GLUI_SUBWINDOW_LEFT);
+    GLUI *glui = GLUI_Master.create_glui_subwindow(main_window, GLUI_SUBWINDOW_RIGHT);
     GLUI_Panel *obj_panel = new
             GLUI_Rollout(glui, "Step 2", true);
 

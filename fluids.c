@@ -305,6 +305,9 @@ void drawLegends() {
     glMatrixMode(GL_MODELVIEW);
     glPushMatrix();
     glBegin(GL_QUADS);
+    float pTop = 165;
+    float pLeft = 715;
+    float pRight = 750;
 
     for (int i = 0; i < 1001; i = i + 1) {
         float vy = 0.001 * i;
@@ -322,10 +325,10 @@ void drawLegends() {
         }
 
         set_colormap(vy);
-        glVertex2f(730, (0.5 * i) + 230); //(x,y top left)
-        glVertex2f(760, (0.5 * i) + 230); //(x,y bottom left)
-        glVertex2f(730, (0.5 * (i + 1)) + 230); //(x,y bottom right)
-        glVertex2f(760, (0.5 * (i + 1)) + 230); //(x,y top right)
+        glVertex2f(pLeft, (0.5 * i) + pTop); //(x,y top left)
+        glVertex2f(pRight, (0.5 * i) + pTop); //(x,y bottom left)
+        glVertex2f(pLeft, (0.5 * (i + 1)) + pTop); //(x,y bottom right)
+        glVertex2f(pRight, (0.5 * (i + 1)) + pTop); //(x,y top right)
     }
 
     glEnd();
@@ -333,14 +336,14 @@ void drawLegends() {
 
     glBegin(GL_LINES);
     glColor3f(255, 255, 255);
-    glVertex2f(730, 230); //(x,y top left)
-    glVertex2f(760, 230); //(x,y bottom left)
-    glVertex2f(730, 500 + 230); //(x,y bottom right)
-    glVertex2f(760, 500 + 230); //(x,y top right)
-    glVertex2f(730, 230); //(x,y bottom right)
-    glVertex2f(730, 500 + 230); //(x,y bottom right)
-    glVertex2f(760, 230); //(x,y bottom left)
-    glVertex2f(760, 500 + 230); //(x,y bottom left)
+    glVertex2f(pLeft, pTop); //(x,y top left)
+    glVertex2f(pRight, pTop); //(x,y bottom left)
+    glVertex2f(pLeft, 500 + pTop); //(x,y bottom right)
+    glVertex2f(pRight, 500 + pTop); //(x,y top right)
+    glVertex2f(pLeft, pTop); //(x,y bottom right)
+    glVertex2f(pLeft, 500 + pTop); //(x,y bottom right)
+    glVertex2f(pRight, pTop); //(x,y bottom left)
+    glVertex2f(pRight, 500 + pTop); //(x,y bottom left)
     glEnd();
 }
 
@@ -650,33 +653,33 @@ void visualize(void) {
                 px0 = wn + (fftw_real) i * wn;
                 py0 = hn + (fftw_real) j * hn;
 
-                idx0 = ((j - 0) * DIM) + i - 0;
+                idx0 = (j * DIM) + i;
 
                 px1 = wn + (fftw_real) i * wn;
                 py1 = hn + (fftw_real) (j + 1) * hn;
 
-                idx1 = ((j + 2) * DIM) + i - 0;
+                idx1 = ((j + 1) * DIM) + i;
 
                 px2 = wn + (fftw_real) (i + 1) * wn;
                 py2 = hn + (fftw_real) (j + 1) * hn;
 
-                idx2 = ((j + 2) * DIM) + (i + 2);
+                idx2 = ((j + 1) * DIM) + (i + 1);
 
                 px3 = wn + (fftw_real) (i + 1) * wn;
                 py3 = hn + (fftw_real) j * hn;
 
-                idx3 = ((j - 0) * DIM) + (i + 2);
+                idx3 = (j * DIM) + (i + 1);
 
-                fftw_real v_mag0 = (sqrt(pow(vx[idx0], 2) + pow(vy[idx0], 2))) * 25;
-                fftw_real v_mag1 = (sqrt(pow(vx[idx1], 2) + pow(vy[idx1], 2))) * 25;
-                fftw_real v_mag2 = (sqrt(pow(vx[idx2], 2) + pow(vy[idx2], 2))) * 25;
-                fftw_real v_mag3 = (sqrt(pow(vx[idx3], 2) + pow(vy[idx3], 2))) * 25;
+//                fftw_real v_mag0 = (sqrt(pow(vx[idx0], 2) + pow(vy[idx0], 2))) * 25;
+//                fftw_real v_mag1 = (sqrt(pow(vx[idx1], 2) + pow(vy[idx1], 2))) * 25;
+//                fftw_real v_mag2 = (sqrt(pow(vx[idx2], 2) + pow(vy[idx2], 2))) * 25;
+//                fftw_real v_mag3 = (sqrt(pow(vx[idx3], 2) + pow(vy[idx3], 2))) * 25;
+//
+//                fftw_real d_x = 100 * (-v_mag0 + v_mag1 - v_mag2 + v_mag3);
+//                fftw_real d_y = 100 * (v_mag0 - v_mag1 + v_mag2 - v_mag3);
 
-                fftw_real d_x = 100 * (-v_mag0 + v_mag3 - v_mag1 + v_mag2);
-                fftw_real d_y = 100 * (v_mag1 - v_mag0 + v_mag2 - v_mag3);
-
-//                fftw_real d_x = 2500 * (vx[idx0] - vx[idx3] + vx[idx1] - vx[idx2]);
-//                fftw_real d_y = 2500 * (vy[idx1] - vy[idx0] + vy[idx2] - vy[idx3]);
+                fftw_real d_x = 2500 * (-vx[idx0] + vx[idx3] - vx[idx1] + vx[idx2]);
+                fftw_real d_y = 2500 * (vy[idx1] - vy[idx0] + vy[idx2] - vy[idx3]);
                 fftw_real threshold = 10;
 
                 if (fabs(d_x) >= fabs(d_y)) {
@@ -761,11 +764,12 @@ void display(void) {
 
 //reshape: Handle window resizing (reshaping) events
 void reshape(int w, int h) {
-    glViewport(0.0f, 0.0f, (GLfloat) w, (GLfloat) h);
+    float panel_length = 215;
+    glViewport(0.0f, 0.0f, (GLfloat) w - panel_length, (GLfloat) h);
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    gluOrtho2D(0.0, (GLdouble) w, 0.0, (GLdouble) h);
-    winWidth = w;
+    gluOrtho2D(0.0, (GLdouble) w - panel_length, 0.0, (GLdouble) h);
+    winWidth = w - panel_length;
     winHeight = h;
 }
 
@@ -900,7 +904,7 @@ int main(int argc, char **argv) {
     main_window = glutCreateWindow(WINDOW_TITLE_PREFIX);
 
     /*** Create the side subwindow ***/
-    GLUI *glui = GLUI_Master.create_glui_subwindow(main_window, GLUI_SUBWINDOW_LEFT);
+    GLUI *glui = GLUI_Master.create_glui_subwindow(main_window, GLUI_SUBWINDOW_RIGHT);
     GLUI_Panel *obj_panel = new
             GLUI_Rollout(glui, "Step 2", true);
 
