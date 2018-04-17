@@ -330,10 +330,14 @@ void drawLegends() {
         }
 
         set_colormap(vy);
-        glVertex2f(pLeft, (0.5 * i) + pTop); //(x,y top left)
-        glVertex2f(pRight, (0.5 * i) + pTop); //(x,y bottom left)
-        glVertex2f(pLeft, (0.5 * (i + 1)) + pTop); //(x,y bottom right)
-        glVertex2f(pRight, (0.5 * (i + 1)) + pTop); //(x,y top right)
+//        glVertex2f(pLeft, (0.5 * i) + pTop); //(x,y top left)
+//        glVertex2f(pRight, (0.5 * i) + pTop); //(x,y bottom left)
+//        glVertex2f(pLeft, (0.5 * (i + 1)) + pTop); //(x,y bottom right)
+//        glVertex2f(pRight, (0.5 * (i + 1)) + pTop); //(x,y top right)
+        glVertex3f(pLeft, (0.5 * i) + pTop, 0); //(x,y top left)
+        glVertex3f(pRight, (0.5 * i) + pTop, 0); //(x,y bottom left)
+        glVertex3f(pLeft, (0.5 * (i + 1)) + pTop, 0); //(x,y bottom right)
+        glVertex3f(pRight, (0.5 * (i + 1)) + pTop, 0); //(x,y top right)
     }
 
     glEnd();
@@ -341,14 +345,22 @@ void drawLegends() {
 
     glBegin(GL_LINES);
     glColor3f(255, 255, 255);
-    glVertex2f(pLeft, pTop); //(x,y top left)
-    glVertex2f(pRight, pTop); //(x,y bottom left)
-    glVertex2f(pLeft, 500 + pTop); //(x,y bottom right)
-    glVertex2f(pRight, 500 + pTop); //(x,y top right)
-    glVertex2f(pLeft, pTop); //(x,y bottom right)
-    glVertex2f(pLeft, 500 + pTop); //(x,y bottom right)
-    glVertex2f(pRight, pTop); //(x,y bottom left)
-    glVertex2f(pRight, 500 + pTop); //(x,y bottom left)
+    glVertex3f(pLeft, pTop, 0); //(x,y top left)
+    glVertex3f(pRight, pTop, 0); //(x,y bottom left)
+    glVertex3f(pLeft, 500 + pTop, 0); //(x,y bottom right)
+    glVertex3f(pRight, 500 + pTop, 0); //(x,y top right)
+    glVertex3f(pLeft, pTop, 0); //(x,y bottom right)
+    glVertex3f(pLeft, 500 + pTop, 0); //(x,y bottom right)
+    glVertex3f(pRight, pTop, 0); //(x,y bottom left)
+    glVertex3f(pRight, 500 + pTop, 0); //(x,y bottom left)
+//    glVertex2f(pLeft, pTop); //(x,y top left)
+//    glVertex2f(pRight, pTop); //(x,y bottom left)
+//    glVertex2f(pLeft, 500 + pTop); //(x,y bottom right)
+//    glVertex2f(pRight, 500 + pTop); //(x,y top right)
+//    glVertex2f(pLeft, pTop); //(x,y bottom right)
+//    glVertex2f(pLeft, 500 + pTop); //(x,y bottom right)
+//    glVertex2f(pRight, pTop); //(x,y bottom left)
+//    glVertex2f(pRight, 500 + pTop); //(x,y bottom left)
     glEnd();
 }
 
@@ -407,25 +419,29 @@ void visualize(void) {
         glVertex3f(260, 260, 1);
         glVertex3f(260, 310, 1);
         glVertex3f(310, 260, 1);
-//        glVertex3f(250, 250, 0);
-//        glVertex3f(250, 300, 0);
-//        glVertex3f(275, 275, -50);
+
+        glVertex3f(250, 250, 0);
+        glVertex3f(250, 300, 0);
+        glVertex3f(275, 275, -50);
 
         glColor3f(0, 0, 255);
         glVertex3f(270, 270, 2);
         glVertex3f(270, 320, 2);
         glVertex3f(320, 270, 2);
-//        glVertex3f(250, 250, 0);
-//        glVertex3f(275, 275, -50);
-//        glVertex3f(300, 250, 0);
+
+        glVertex3f(250, 250, 0);
+        glVertex3f(275, 275, -50);
+        glVertex3f(300, 250, 0);
 
         glColor3f(255, 255, 255);
         glVertex3f(270, 270, 3);
         glVertex3f(270, 320, 3);
         glVertex3f(320, 270, 3);
-//        glVertex3f(275, 275, -50);
-//        glVertex3f(250, 300, 0);
-//        glVertex3f(300, 250, 0);
+
+        glVertex3f(275, 275, -50);
+        glVertex3f(250, 300, 0);
+        glVertex3f(300, 250, 0);
+
         glEnd();
 
     } else if (draw_smoke == 1) {
@@ -816,63 +832,9 @@ void visualize(void) {
 
 
 //------ INTERACTION CODE STARTS HERE -----------------------------------------------------------------
-float eye_x = 0, eye_y = 0, eye_z = 1.2;
-float c_x = 0, c_y = 0, c_z = 0;
+float eye_x = 275, eye_y = 275, eye_z = 100;
+float c_x = 275, c_y = 275, c_z = 0;
 float up_x = 0, up_y = 1, up_z = 0;
-
-float t = 0;
-
-void timer(int val) {
-    t += 0.5f;
-    glutTimerFunc(10, timer, 0);
-    glutPostRedisplay();
-}
-
-void display1() {
-    glClearColor(0, 0, 0, 0);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-    double w = glutGet(GLUT_WINDOW_WIDTH);
-    double h = glutGet(GLUT_WINDOW_HEIGHT);
-    std::cout<<"w: "<<w<<". h: "<<h<<std::endl;
-    gluPerspective(45, w / h, 0.1, 4333.0);
-
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
-    glTranslatef(0, 0, -5);
-
-    float norm = 20;
-    float z = 0;
-    float a = 0;
-//    glPushMatrix();
-    glRotatef(t, 0, 1, 1);
-
-    glBegin(GL_TRIANGLES);
-    glColor3f(255, 0, 0);
-    glVertex3f(a -norm, a +norm, z);
-    glVertex3f(norm+a, norm+a, z);
-    glColor3f(0, 110, 10);
-    glVertex3f(-norm+a, -norm+a, z);
-
-    glColor3f(255, 0, 0);
-    glVertex3f(-norm + 10 + a, norm + 10 + a, z - 1);
-    glVertex3f(norm + 10 + a, norm + 10 + a, z - 1);
-    glColor3f(0, 110, 10);
-    glVertex3f(-norm + 10 + a , -norm + 10 + a, z - 1);
-
-    glColor3f(255, 0, 0);
-    glVertex3f(-norm + 20 + a, norm + 20 + a, z - 2);
-    glVertex3f(norm + 20 + a, norm + 20 + a, z - 2);
-    glColor3f(0, 110, 10);
-    glVertex3f(-norm + 20 + a , -norm + 20 +a , z - 2);
-    glEnd();
-
-//    glPopMatrix();
-    glFlush();
-    glutSwapBuffers();
-}
 
 //display: Handle window redrawing events. Simply delegates to visualize().
 void display(void) {
@@ -885,13 +847,13 @@ void display(void) {
     glViewport(0.0f, 0.0f, (GLfloat) w - panel_length, (GLfloat) h);
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    gluPerspective(45, w / h, 0.1, 500);
+    gluPerspective(90, w / h, 0.1, 1000);
 //    gluOrtho2D(0.0, (GLdouble) w - panel_length, 0.0, (GLdouble) h);
 
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
-//    glTranslatef(0, 0, 2);
-    glTranslatef(0, 0, -5);
+    glTranslatef(0, 0, 0);
+//    glTranslatef(0, 0, -5);
 //    glRotatef(t, 0, 1, 1);
 
     glMultMatrixf(view_rotate);
@@ -901,7 +863,8 @@ void display(void) {
     float norm = 1;
     float z = 0;
 //    glPushMatrix();
-    glRotatef(t, 0, 1, 1);
+//    float t = 0;
+//    glRotatef(t, 0, 1, 1);
 
     glBegin(GL_TRIANGLES);
     glColor3f(255, 0, 0);
@@ -923,7 +886,7 @@ void display(void) {
     glVertex3f(-norm + 2, -norm + 2, z - 2);
     glEnd();
 
-//    visualize();
+    visualize();
 
     glFlush();
     glutSwapBuffers();
@@ -1144,23 +1107,23 @@ int main(int argc, char **argv) {
     view_rot->set_spin(1.0);
 
     GLUI_Spinner *min_spinner2 = new
-            GLUI_Spinner(slices_panel, "eye_x:", &eye_x, 2, control_cb);
+            GLUI_Spinner(slices_panel, "Eye position x:", &eye_x, 2, control_cb);
     GLUI_Spinner *min_spinner3 = new
-            GLUI_Spinner(slices_panel, "eye_y:", &eye_y, 2, control_cb);
+            GLUI_Spinner(slices_panel, "Eye position y:", &eye_y, 2, control_cb);
     GLUI_Spinner *min_spinner4 = new
-            GLUI_Spinner(slices_panel, "eye_z:", &eye_z, 2, control_cb);
+            GLUI_Spinner(slices_panel, "Eye position z:", &eye_z, 2, control_cb);
     GLUI_Spinner *min_spinner5 = new
-            GLUI_Spinner(slices_panel, "c_x:", &c_x, 2, control_cb);
+            GLUI_Spinner(slices_panel, "Center x:", &c_x, 2, control_cb);
     GLUI_Spinner *min_spinner6 = new
-            GLUI_Spinner(slices_panel, "c_y:", &c_y, 2, control_cb);
+            GLUI_Spinner(slices_panel, "Center y:", &c_y, 2, control_cb);
     GLUI_Spinner *min_spinner7 = new
-            GLUI_Spinner(slices_panel, "c_z:", &c_z, 2, control_cb);
+            GLUI_Spinner(slices_panel, "Center z:", &c_z, 2, control_cb);
     GLUI_Spinner *min_spinner8 = new
-            GLUI_Spinner(slices_panel, "up_x:", &up_x, 2, control_cb);
+            GLUI_Spinner(slices_panel, "Up vector x:", &up_x, 2, control_cb);
     GLUI_Spinner *min_spinner9 = new
-            GLUI_Spinner(slices_panel, "up_y:", &up_y, 2, control_cb);
+            GLUI_Spinner(slices_panel, "Up vector y:", &up_y, 2, control_cb);
     GLUI_Spinner *min_spinner10 = new
-            GLUI_Spinner(slices_panel, "up_z:", &up_z, 2, control_cb);
+            GLUI_Spinner(slices_panel, "Up vector z:", &up_z, 2, control_cb);
 
     glutDisplayFunc(display);
 //    glutReshapeFunc(reshape);
