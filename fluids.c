@@ -10,6 +10,9 @@
 #include <glui.h>
 #include <vector>
 #include <iostream>
+#include <queue>
+
+using namespace std;
 
 #define PI 3.14159265
 #define WINDOW_TITLE_PREFIX "Real Time Fluid Flow Simulation Step3"
@@ -22,6 +25,12 @@ GLUI_RadioGroup *radio4;
 GLUI_RadioGroup *radio5;
 GLUI_Spinner *min_spinner, *max_spinner;
 int minimal = 1, maximal = 256;
+
+std::queue<fftw_real *> queue_vx;
+std::queue<fftw_real *> queue_vy;
+std::queue<fftw_real *> queue_fx;
+std::queue<fftw_real *> queue_fy;
+std::queue<fftw_real *> queue_rho;
 
 
 //--- SIMULATION PARAMETERS ------------------------------------------------------------------------
@@ -364,8 +373,71 @@ void drawLegends() {
     glEnd();
 }
 
+void storeInQueue() {
+    int dim = DIM * 2 * (DIM / 2 + 1);
+    int size = 20;
+
+    fftw_real *deepCopyFx = new fftw_real[dim];
+    for (size_t i = 0; i < dim; ++i)
+        deepCopyFx[i] = fx[i];
+
+    queue_fx.push(deepCopyFx);
+
+    if (queue_fx.size() > size) {
+        queue_fx.pop();
+//        delete[] tmp;
+    }
+
+    fftw_real *deepCopyFy = new fftw_real[dim];
+    for (size_t i = 0; i < dim; ++i)
+        deepCopyFy[i] = fy[i];
+
+    queue_fy.push(deepCopyFy);
+
+    if (queue_fy.size() > size) {
+        queue_fy.pop();
+    }
+
+    fftw_real *deepCopyVx = new fftw_real[dim];
+    for (size_t i = 0; i < dim; ++i)
+        deepCopyVx[i] = vx[i];
+
+    queue_vx.push(deepCopyVx);
+
+    if (queue_vx.size() > size) {
+        queue_vx.pop();
+    }
+
+    fftw_real *deepCopyVy = new fftw_real[dim];
+    for (size_t i = 0; i < dim; ++i)
+        deepCopyVy[i] = vy[i];
+
+    queue_vy.push(deepCopyVy);
+
+    if (queue_vy.size() > size) {
+        queue_vy.pop();
+    }
+
+    fftw_real *deepCopyRho = new fftw_real[dim];
+    for (size_t i = 0; i < dim; ++i)
+        deepCopyRho[i] = rho[i];
+
+    queue_rho.push(deepCopyRho);
+
+    if (queue_rho.size() > size) {
+        queue_rho.pop();
+    }
+
+//    cout << queue_fx.size() << endl;
+//    for (int i = 0; i < queue_fx.size(); i++) {
+//        for (int j = 0; j < dim; j ++) {
+//            cout << queue_rho.back()[j] << endl;
+//        }
+//    }
+}
+
 //visualize: This is the main visualization function
-void visualize(void) {
+void visualize() {
     int i, j, idx, idx0, idx1, idx2, idx3;
     double px0, py0, px1, py1, px2, py2, px3, py3;
     fftw_real wn = (fftw_real) winWidth / (fftw_real) (DIM + 1);   // Grid cell width
@@ -832,12 +904,14 @@ void visualize(void) {
 
 
 //------ INTERACTION CODE STARTS HERE -----------------------------------------------------------------
-float eye_x = 275, eye_y = 275, eye_z = 100;
+float eye_x = 275, eye_y = 275, eye_z = 400;
 float c_x = 275, c_y = 275, c_z = 0;
 float up_x = 0, up_y = 1, up_z = 0;
 
 //display: Handle window redrawing events. Simply delegates to visualize().
 void display(void) {
+    storeInQueue();
+
 //    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
