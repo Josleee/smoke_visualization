@@ -12,6 +12,7 @@
 #include <iostream>
 #include <queue>
 #include <list>
+#include <vector>
 
 using namespace std;
 
@@ -27,7 +28,8 @@ GLUI_RadioGroup *radio5;
 GLUI_Spinner *min_spinner, *max_spinner;
 int minimal = 1, maximal = 256;
 
-int stack_layers = 50;
+int stack_layers = 60;
+float number_of_seed = 60;
 float alpha = 0.5;
 float alpha2 = 0.5;
 std::list<fftw_real *> queue_vx;
@@ -36,6 +38,7 @@ std::list<fftw_real *> queue_fx;
 std::list<fftw_real *> queue_fy;
 std::list<fftw_real *> queue_rho;
 
+float sax, say, sbx, sby = 0;
 
 //--- SIMULATION PARAMETERS ------------------------------------------------------------------------
 const int DIM = 60;            //size of simulation grid
@@ -52,7 +55,7 @@ rfftwnd_plan plan_rc, plan_cr;  //simulation domain discretization
 float view_rotate[16] = {1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1};
 int winWidth, winHeight;      //size of the graphics window, in pixels
 int color_dir = 1;            //use direction color-coding or not
-int slice_switch = 1;
+int slice_switch = 2;
 float vec_scale = 1000;            //scaling of hedgehogs
 int draw_smoke = 1;           //draw the smoke or not
 float clamp_range = 1;
@@ -343,10 +346,6 @@ void drawLegends() {
         }
 
         set_colormap(vy, 1);
-//        glVertex2f(pLeft, (0.5 * i) + pTop); //(x,y top left)
-//        glVertex2f(pRight, (0.5 * i) + pTop); //(x,y bottom left)
-//        glVertex2f(pLeft, (0.5 * (i + 1)) + pTop); //(x,y bottom right)
-//        glVertex2f(pRight, (0.5 * (i + 1)) + pTop); //(x,y top right)
         glVertex3f(pLeft, (0.5 * i) + pTop, 0); //(x,y top left)
         glVertex3f(pRight, (0.5 * i) + pTop, 0); //(x,y bottom left)
         glVertex3f(pLeft, (0.5 * (i + 1)) + pTop, 0); //(x,y bottom right)
@@ -366,14 +365,6 @@ void drawLegends() {
     glVertex3f(pLeft, 500 + pTop, 0); //(x,y bottom right)
     glVertex3f(pRight, pTop, 0); //(x,y bottom left)
     glVertex3f(pRight, 500 + pTop, 0); //(x,y bottom left)
-//    glVertex2f(pLeft, pTop); //(x,y top left)
-//    glVertex2f(pRight, pTop); //(x,y bottom left)
-//    glVertex2f(pLeft, 500 + pTop); //(x,y bottom right)
-//    glVertex2f(pRight, 500 + pTop); //(x,y top right)
-//    glVertex2f(pLeft, pTop); //(x,y bottom right)
-//    glVertex2f(pLeft, 500 + pTop); //(x,y bottom right)
-//    glVertex2f(pRight, pTop); //(x,y bottom left)
-//    glVertex2f(pRight, 500 + pTop); //(x,y bottom left)
     glEnd();
 }
 
@@ -827,6 +818,143 @@ void visualize(fftw_real *fx, fftw_real *fy, fftw_real *vx, fftw_real *vy, fftw_
     drawLegends();
 }
 
+void drawCubeContour() {
+    glBegin(GL_LINES);
+
+    float z_inner = -400;
+    float z_outer = 400;
+
+    glColor4f(255, 255, 255, 0.5);
+    glVertex3f(0, 0, z_inner);
+    glVertex3f(0, winHeight, z_inner);
+
+    glVertex3f(0, 0, z_inner);
+    glVertex3f(winWidth, 0, z_inner);
+
+    glVertex3f(winWidth, 0, z_inner);
+    glVertex3f(winWidth, winHeight, z_inner);
+
+    glVertex3f(0, winHeight, z_inner);
+    glVertex3f(winWidth, winHeight, z_inner);
+
+    glVertex3f(0, 0, z_outer);
+    glVertex3f(0, winHeight, z_outer);
+
+    glVertex3f(0, 0, z_outer);
+    glVertex3f(winWidth, 0, z_outer);
+
+    glVertex3f(winWidth, 0, z_outer);
+    glVertex3f(winWidth, winHeight, z_outer);
+
+    glVertex3f(0, winHeight, z_outer);
+    glVertex3f(winWidth, winHeight, z_outer);
+
+    glVertex3f(0, 0, z_inner);
+    glVertex3f(0, 0, z_outer);
+
+    glVertex3f(winWidth, 0, z_inner);
+    glVertex3f(winWidth, 0, z_outer);
+
+    glVertex3f(0, winHeight, z_inner);
+    glVertex3f(0, winHeight, z_outer);
+
+    glVertex3f(winWidth, winHeight, z_inner);
+    glVertex3f(winWidth, winHeight, z_outer);
+    glEnd();
+}
+
+
+void drawStreamSurface(float alpha) {
+    float arr_x[DIM] = {};
+    float arr_y[DIM] = {};
+    float tmp_pre_x1 = -1;
+    float tmp_pre_y1 = -1;
+    float pre_rho = 0;
+
+    for (int j = 0; j < number_of_seed; ++j) {
+        arr_x[j] = (sbx - sax) / (number_of_seed - 1) * j + sax;
+        arr_y[j] = (sby - say) / (number_of_seed - 1) * j + say;
+    }
+
+    list<fftw_real *>::iterator ivx = queue_vx.begin();
+    list<fftw_real *>::iterator ivy = queue_vy.begin();
+    list<fftw_real *>::iterator irho = queue_rho.begin();
+
+    for (int i = 0; i < stack_layers; ++i, ++ivx, ++ivy, ++irho) {
+        float z0 = -400 + 800 / stack_layers * i;
+        float z = -400 + 800 / stack_layers * (i + 1);
+        glShadeModel(GL_SMOOTH);
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+        glBegin(GL_TRIANGLES);
+
+        for (int j = 0; j < number_of_seed; ++j) {
+            if (arr_x[j] < 0 || arr_y[j] < 0 || arr_x[j] > winWidth || arr_y[j] > winHeight) {
+//                cout<<"abnormal 0 -> "<<j<<" x:"<<arr_x[j]<<" y:"<<arr_y[j]<<endl;
+                tmp_pre_x1 = -1;
+                tmp_pre_y1 = -1;
+                arr_x[j] = -1;
+                arr_y[j] = -1;
+                continue;
+            }
+
+            int dimension = int(floor(arr_x[j] / winWidth * DIM) + floor(arr_y[j] / winHeight * DIM) * DIM);
+            float dx = (*ivx)[dimension] * 100;
+            float dy = (*ivy)[dimension] * 100;
+//            cout << "DX: " << dx << " DY: " << dy << " i: " << i << endl;
+
+            if (tmp_pre_x1 < 0 || tmp_pre_y1 < 0) {
+//                cout << "abnormal 1 -> " << j << " x:" << tmp_pre_x1 << " y:" << tmp_pre_y1 << " nx:" << arr_x[j]
+//                     << " ny:" << arr_y[j] << endl;
+                tmp_pre_x1 = arr_x[j];
+                tmp_pre_y1 = arr_y[j];
+            } else if (arr_x[j - 1] < 0 || arr_y[j - 1] < 0) {
+//                cout << "abnormal 2" << endl;
+                tmp_pre_x1 = arr_x[j];
+                tmp_pre_y1 = arr_y[j];
+            } else if (arr_x[j] + dx < 0 || arr_x[j] + dx > winWidth ||
+                       arr_y[j] + dy < 0 || arr_y[j] + dy > winHeight) {
+//                cout << "abnormal 3" << endl;
+                tmp_pre_x1 = -1;
+                tmp_pre_y1 = -1;
+                arr_x[j] = -1;
+                arr_y[j] = -1;
+            } else {
+//                cout << "draw  " << tmp_pre_x1 << " - " << tmp_pre_y1 << endl;
+//                cout << "draw2 " << arr_x[j] << " - " << arr_y[j] << endl;
+//                cout << "draw3 " << arr_x[j - 1] << " - " << arr_y[j - 1] << endl;
+//                cout << z << " z0: " << z0 << endl;
+                set_colormap(pre_rho, alpha);
+                glVertex3f(tmp_pre_x1, tmp_pre_y1, z0);
+                set_colormap((*irho)[dimension], alpha);
+                glVertex3f(arr_x[j], arr_y[j], z0);
+                set_colormap(pre_rho, alpha);
+                glVertex3f(arr_x[j - 1], arr_y[j - 1], z);
+
+                set_colormap((*irho)[dimension], alpha);
+                glVertex3f(arr_x[j], arr_y[j], z0);
+                set_colormap(pre_rho, alpha);
+                glVertex3f(arr_x[j - 1], arr_y[j - 1], z);
+                set_colormap((*irho)[dimension], alpha);
+                glVertex3f(arr_x[j] + dx, arr_y[j] + dy, z);
+            }
+
+            if (j == stack_layers - 1) {
+//                cout << "Set to 0, J: " << j << endl;
+                tmp_pre_x1 = -1;
+                tmp_pre_y1 = -1;
+            } else {
+                tmp_pre_x1 = arr_x[j];
+                tmp_pre_y1 = arr_y[j];
+            }
+
+            arr_x[j] = arr_x[j] + dx;
+            arr_y[j] = arr_y[j] + dy;
+            pre_rho = (*irho)[dimension];
+        }
+        glEnd();
+    }
+}
+
 
 //------ INTERACTION CODE STARTS HERE -----------------------------------------------------------------
 float eye_x = 0, eye_y = 0, eye_z = 400;
@@ -847,9 +975,9 @@ void display(void) {
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
     if (slice_switch == 0) {
-        gluPerspective(90, (w - panel_length) / h, 1.0f, 2000.0f);
+        gluPerspective(90, (w - panel_length) / h, 1.0f, 3000.0f);
     } else {
-        gluPerspective(60, (w - panel_length) / h, 1.0f, 2000.0f);
+        gluPerspective(60, (w - panel_length) / h, 1.0f, 3000.0f);
     }
 //    gluOrtho2D(0.0, (GLdouble) w - panel_length, 0.0, (GLdouble) h);
 
@@ -869,9 +997,9 @@ void display(void) {
         c_x = winWidth / 2, c_y = winHeight / 2, c_z = 0;
         visualize(fx, fy, vx, vy, rho, 0, 1, 1);
 
-    } else {
+    } else if (slice_switch == 1) {
         eye_x = 1000, eye_y = 1200, eye_z = 1000;
-        c_x = 400, c_y = 450, c_z = 0;
+        c_x = 350, c_y = 300, c_z = 0;
 
         if (queue_rho.size() >= stack_layers) {
             list<fftw_real *>::iterator ifx = queue_fx.begin();
@@ -881,13 +1009,28 @@ void display(void) {
             list<fftw_real *>::iterator irho = queue_rho.begin();
 
             for (float ind = 1; irho != queue_rho.end(); ++ifx, ++ify, ++ivx, ++ivy, ++irho, ++ind) {
-                visualize(*ifx, *ify, *ivx, *ivy, *irho, (-400 + ind * (600 / stack_layers)), alpha, alpha2);
+                visualize(*ifx, *ify, *ivx, *ivy, *irho, (-400 + ind * (800 / stack_layers)), alpha, alpha2);
             }
         }
 
+    } else {
+        eye_x = 1000, eye_y = 1200, eye_z = 1000;
+        c_x = 350, c_y = 300, c_z = 0;
+
+        glBegin(GL_LINES);
+        glColor4f(255, 0, 0, 1);
+        glVertex3f(sax, say, 400);
+        glVertex3f(sbx, sby, 400);
+        glEnd();
+
+        drawCubeContour();
+
+        if (queue_rho.size() >= stack_layers) {
+            drawStreamSurface(1);
+        }
     }
 
-//    glFlush();
+    glFlush();
     glutSwapBuffers();
 
 }
@@ -1037,6 +1180,11 @@ int main(int argc, char **argv) {
     eye_x = winWidth / 2, eye_y = winHeight / 2, eye_z = 400;
     c_x = winWidth / 2, c_y = winHeight / 2, c_z = 0;
 
+    sax = 0;
+    say = winHeight / 2;
+    sbx = winWidth;
+    sby = winHeight / 2;
+
     main_window = glutCreateWindow(WINDOW_TITLE_PREFIX);
 
     /*** Create the side subwindow ***/
@@ -1097,31 +1245,71 @@ int main(int argc, char **argv) {
     new
             GLUI_RadioButton(radio3, "Gradient of fluid velocity");
 
+
     GLUI_Panel *obj_panel2 = new
-            GLUI_Rollout(glui, "Slice settings", true);
+            GLUI_Rollout(glui, "3D visualization", true);
 
-    GLUI_Panel *slices_panel = new
-            GLUI_Panel(obj_panel2, "Slices");
+    GLUI_Panel *slices_panel2 = new
+            GLUI_Panel(obj_panel2, "View modes");
     radio4 = new
-            GLUI_RadioGroup(slices_panel, &slice_switch, 1, control_radio);
+            GLUI_RadioGroup(slices_panel2, &slice_switch, 1, control_radio);
     new
-            GLUI_RadioButton(radio4, "2D");
+            GLUI_RadioButton(radio4, "2D normal");
     new
-            GLUI_RadioButton(radio4, "3D");
+            GLUI_RadioButton(radio4, "Slice");
+    new
+            GLUI_RadioButton(radio4, "Stream surface");
 
-    GLUI_Spinner *layers_spinner = new
-            GLUI_Spinner(slices_panel, "Number of layers:", &stack_layers, 2, control_cb);
 
-    GLUI_Rotation *view_rot = new GLUI_Rotation(slices_panel, "Objects", view_rotate);
-    view_rot->set_spin(1.0);
-
-    GLUI_Scrollbar *sb = new GLUI_Scrollbar(slices_panel, "Alpha", GLUI_SCROLL_HORIZONTAL,
+    GLUI_Panel *trans_panel = new
+            GLUI_Panel(obj_panel2, "Transparency settings");
+    GLUI_Scrollbar *sb = new GLUI_Scrollbar(trans_panel, "Alpha", GLUI_SCROLL_HORIZONTAL,
                                             &alpha);
     sb->set_float_limits(0, 1);
 
-    GLUI_Scrollbar *sb2 = new GLUI_Scrollbar(slices_panel, "Alpha2", GLUI_SCROLL_HORIZONTAL,
+    GLUI_Scrollbar *sb2 = new GLUI_Scrollbar(trans_panel, "Alpha2", GLUI_SCROLL_HORIZONTAL,
                                              &alpha2);
     sb2->set_float_limits(0, 1);
+
+
+    GLUI_Panel *surface_seed_panel = new
+            GLUI_Panel(obj_panel2, "Number of seeds");
+    GLUI_Scrollbar *nos = new GLUI_Scrollbar(surface_seed_panel, "sax", GLUI_SCROLL_HORIZONTAL,
+                                              &number_of_seed);
+    nos->set_float_limits(10, 60);
+
+
+    GLUI_Panel *surface_panel = new
+            GLUI_Panel(obj_panel2, "Steam surface seed line");
+    GLUI_Scrollbar *saxs = new GLUI_Scrollbar(surface_panel, "sax", GLUI_SCROLL_HORIZONTAL,
+                                              &sax);
+    saxs->set_float_limits(0, winWidth);
+
+    GLUI_Scrollbar *says = new GLUI_Scrollbar(surface_panel, "say", GLUI_SCROLL_HORIZONTAL,
+                                              &say);
+    says->set_float_limits(0, winHeight);
+
+    GLUI_Scrollbar *sbxs = new GLUI_Scrollbar(surface_panel, "sbx", GLUI_SCROLL_HORIZONTAL,
+                                              &sbx);
+    sbxs->set_float_limits(0, winWidth);
+
+    GLUI_Scrollbar *sbys = new GLUI_Scrollbar(surface_panel, "sby", GLUI_SCROLL_HORIZONTAL,
+                                              &sby);
+    sbys->set_float_limits(0, winHeight);
+
+
+    GLUI_Panel *obj_panel3 = new
+            GLUI_Rollout(glui, "3D settings", false);
+
+    GLUI_Panel *slices_panel = new
+            GLUI_Panel(obj_panel3, "3D settings");
+
+    GLUI_Spinner *layers_spinner = new
+            GLUI_Spinner(slices_panel, "Number of layers:", &stack_layers, 2, control_cb);
+    layers_spinner->set_float_limits(1, 1000);
+
+    GLUI_Rotation *view_rot = new GLUI_Rotation(slices_panel, "View rotation", view_rotate);
+    view_rot->set_spin(1.0);
 
     GLUI_Spinner *min_spinner2 = new
             GLUI_Spinner(slices_panel, "Eye position x:", &eye_x, 2, control_cb);
