@@ -27,7 +27,7 @@ GLUI_RadioGroup *radio5;
 GLUI_Spinner *min_spinner, *max_spinner;
 int minimal = 1, maximal = 256;
 
-int stack_layers = 50;
+int stack_layers = 20;
 float alpha = 0.5;
 float alpha2 = 0.5;
 std::list<fftw_real *> queue_vx;
@@ -862,63 +862,82 @@ void drawCubeContour() {
 }
 
 
-void drawStreamSurface() {
-    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-    glBegin(GL_TRIANGLES);
+void drawStreamSurface(float alpha) {
+    float arr_x[DIM] = {};
+    float arr_y[DIM] = {};
+    float tmp_pre_x1 = -1;
+    float tmp_pre_y1 = -1;
+    float number_of_seed = 60;
 
-    float arr_x[60] = {};
-    float arr_y[60] = {};
-    float tmp_pre_x = 0;
-    float tmp_pre_y = 0;
-
-    for (int j = 0; j < 60; ++j) {
-        arr_x[j] = (sbx - sax) / (60 - 1) * j +sax;
-        arr_y[j] = (sby - say) / (60 - 1) * j +say;
-        cout<<arr_x[j]<<" "<<arr_y[j]<<endl;
+    for (int j = 0; j < number_of_seed; ++j) {
+        arr_x[j] = (sbx - sax) / (number_of_seed - 1) * j + sax;
+        arr_y[j] = (sby - say) / (number_of_seed - 1) * j + say;
     }
 
+    list<fftw_real *>::iterator ifx = queue_fx.begin();
+    list<fftw_real *>::iterator ify = queue_fy.begin();
+    list<fftw_real *>::iterator ivx = queue_vx.begin();
+    list<fftw_real *>::iterator ivy = queue_vy.begin();
+    list<fftw_real *>::iterator irho = queue_rho.begin();
 
-    for (int i = 0; i < stack_layers; ++i) {
-        float z = 400 - 800 / stack_layers * i;
+    for (int i = 0; i < stack_layers; ++i, ++ifx, ++ify, ++ivx, ++ivy, ++irho) {
+        float z0 = 400 - 800 / stack_layers * i;
+        float z = 400 - 800 / stack_layers * (i + 1);
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+        glBegin(GL_TRIANGLES);
 
-//        for (j = 0; j < DIM - 1; j++)            //draw smoke
-//        {
-//            for (i = 0; i < DIM - 1; i++) {
-//                px0 = wn + (fftw_real) i * wn;
-//                py0 = hn + (fftw_real) j * hn;
-//
-//                idx0 = (j * DIM) + i;
-//
-//                px1 = wn + (fftw_real) i * wn;
-//                py1 = hn + (fftw_real) (j + 1) * hn;
-//                idx1 = ((j + 1) * DIM) + i;
-//
-//                px2 = wn + (fftw_real) (i + 1) * wn;
-//                py2 = hn + (fftw_real) (j + 1) * hn;
-//                idx2 = ((j + 1) * DIM) + (i + 1);
-//
-//                px3 = wn + (fftw_real) (i + 1) * wn;
-//                py3 = hn + (fftw_real) j * hn;
-//                idx3 = (j * DIM) + (i + 1);
-//
-//                set_colormap(rho[idx0], alpha);
-//                glVertex3f(px0, py0, z);
+        for (int j = 0; j < number_of_seed; ++j) {
+            if (arr_x[j] < 0 || arr_y[j] < 0 || arr_x[j] > winWidth || arr_y[j] > winHeight) {
+                tmp_pre_x1 = -1;
+                tmp_pre_y1 = -1;
+                arr_x[j] = -1;
+                arr_y[j] = -1;
+                continue;
+            }
+
+            int dimension = int(floor(arr_x[j] / winWidth * DIM) + floor(arr_y[j] / winHeight * DIM) * DIM);
+            float dx = (*ivx)[dimension] * 1000;
+            float dy = (*ivy)[dimension] * 1000;
+//            cout << "DX: " << dx << " DY: " << dy << " i: " << i << endl;
+
+            if (tmp_pre_x1 < 0 || tmp_pre_y1 < 0) {
+                tmp_pre_x1 = arr_x[j];
+                tmp_pre_y1 = arr_y[j];
+            } else if (arr_x[j - 1] < 0 || arr_y[j - 1] < 0) {
+                tmp_pre_x1 = arr_x[j];
+                tmp_pre_y1 = arr_y[j];
+            } else if (arr_x[j] + dx < 0 || arr_x[j] + dx > winWidth ||
+                       arr_y[j] + dy < 0 || arr_y[j] + dy > winHeight) {
+                tmp_pre_x1 = -1;
+                tmp_pre_y1 = -1;
+                arr_x[j] = -1;
+                arr_y[j] = -1;
+            } else {
+//                cout << "draw  " << tmp_pre_x1 << " - " << tmp_pre_y1 << endl;
+//                cout << "draw2 " << arr_x[j] << " - " << arr_y[j] << endl;
+//                cout << "draw3 " << arr_x[j - 1] << " - " << arr_y[j - 1] << endl;
+//                cout << z << " z0: " << z0 << endl;
+                set_colormap((*irho)[dimension], alpha);
+//                glColor4f(255, 255, 255, 1);
+                glVertex3f(tmp_pre_x1, tmp_pre_y1, z0);
 //                set_colormap(rho[idx1], alpha);
-//                glVertex3f(px1, py1, z);
+                glVertex3f(arr_x[j], arr_y[j], z0);
 //                set_colormap(rho[idx2], alpha);
-//                glVertex3f(px2, py2, z);
-//
-//                set_colormap(rho[idx0], alpha);
-//                glVertex3f(px0, py0, z);
-//                set_colormap(rho[idx2], alpha);
-//                glVertex3f(px2, py2, z);
-//                set_colormap(rho[idx3], alpha);
-//                glVertex3f(px3, py3, z);
-//            }
-//        }
+                glVertex3f(arr_x[j - 1], arr_y[j - 1], z);
 
+////                set_colormap(rho[idx0], alpha);
+//                glVertex3f(arr_x[j] + dx, arr_y[j] + dy, z);
+////                set_colormap(rho[idx1], alpha);
+//                glVertex3f(arr_x[j], arr_y[j], z0);
+////                set_colormap(rho[idx2], alpha);
+//                glVertex3f(arr_x[j - 1], arr_y[j - 1], z);
+
+                tmp_pre_x1 = arr_x[j];
+                tmp_pre_y1 = arr_y[j];
+            }
+        }
+        glEnd();
     }
-    glEnd();
 }
 
 
@@ -990,7 +1009,10 @@ void display(void) {
         glEnd();
 
         drawCubeContour();
-        drawStreamSurface();
+
+        if (queue_rho.size() >= stack_layers) {
+            drawStreamSurface(1);
+        }
     }
 
     glFlush();
@@ -1260,7 +1282,7 @@ int main(int argc, char **argv) {
 
     GLUI_Spinner *layers_spinner = new
             GLUI_Spinner(slices_panel, "Number of layers:", &stack_layers, 2, control_cb);
-    layers_spinner->set_float_limits(1,1000);
+    layers_spinner->set_float_limits(1, 1000);
 
     GLUI_Rotation *view_rot = new GLUI_Rotation(slices_panel, "View rotation", view_rotate);
     view_rot->set_spin(1.0);
