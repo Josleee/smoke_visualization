@@ -1349,7 +1349,7 @@ void control_radio(int control) {
 }
 
 void control_mice(int control) {
-    if (radio3->get_int_val() == 4) {
+    if (radio3->get_int_val() == 5) {
         sl_checkbox->enable();
     } else {
         sl_checkbox->disable();
