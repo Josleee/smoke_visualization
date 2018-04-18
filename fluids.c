@@ -17,7 +17,7 @@
 using namespace std;
 
 #define PI 3.14159265
-#define WINDOW_TITLE_PREFIX "Real Time Fluid Flow Simulation Step3"
+#define WINDOW_TITLE_PREFIX "Real Time Fluid Flow Simulation by Jie Yan s3045625 / Yikun Li s3313794"
 /** These are the live variables passed into GLUI ***/
 int main_window;
 GLUI_RadioGroup *radio;
@@ -256,7 +256,6 @@ void rainbow(float value, float *R, float *G, float *B) {
 
 void redwhite(float value, float *R, float *G, float *B) {
     const float dx = 0.2f;
-//    printf("%f\n", dx);
 
     if (value < 0) value = 0;
     if (value > clamp_range) value = clamp_range;
@@ -264,8 +263,7 @@ void redwhite(float value, float *R, float *G, float *B) {
 
     *R = max(0.0f, (2 - (float) fabs(value - 1) + (float) fabs(value - 2)) / 2);
     *G = max(0.0f, (2 - (float) fabs(value - 1) + (float) fabs(value - 2)) / 2);
-    *B = 1;
-
+    *B = 255;
 }
 
 float scaleVelocity(float v, float min, float max) {
@@ -296,12 +294,6 @@ void set_colormap(float vy, float alpha) {
     } else if (scalar_col == RED_RAINBOW) {
         redwhite(vy, &R, &G, &B);
     } else if (scalar_col == COLOR_BANDS) {
-//        const int NLEVELS = 7;
-//        printf("before %f\n", vy);
-//        vy *= NLEVELS;
-//        vy = (int) (vy);
-//        vy /= NLEVELS;
-//        printf("after %f\n", vy);
         rainbow(vy, &R, &G, &B);
     }
     glColor4f(R, G, B, alpha);
@@ -933,8 +925,8 @@ void visualize(fftw_real *fx, fftw_real *fy, fftw_real *vx, fftw_real *vy, fftw_
         glBegin(GL_LINES);
         for (i = 0; i < limit; i++) {
             set_colormap(current_v_mag[i] * 50, alpha2);
-            glVertex2f(points_x_list[i], points_y_list[i]);
-            glVertex2f(points_x_list[i + 1], points_y_list[i + 1]);
+            glVertex3f(points_x_list[i], points_y_list[i], z);
+            glVertex3f(points_x_list[i + 1], points_y_list[i + 1], z);
         }
         glEnd();
 
@@ -1125,6 +1117,8 @@ void display(void) {
     } else if (slice_switch == 1) {
         eye_x = 1000, eye_y = 1200, eye_z = 1000;
         c_x = 350, c_y = 300, c_z = 0;
+
+        drawCubeContour();
 
         if (queue_rho.size() >= stack_layers) {
             list<fftw_real *>::iterator ifx = queue_fx.begin();
