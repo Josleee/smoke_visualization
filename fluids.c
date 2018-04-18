@@ -38,11 +38,11 @@ int color_dir = 1;            //use direction color-coding or not
 float vec_scale = 1000;            //scaling of hedgehogs
 int draw_smoke = 0;           //draw the smoke or not
 float clamp_range = 1;
-int draw_vecs = 5;//draw the vector field or not
+int draw_vecs = 4;//draw the vector field or not
 int color_map_dataset = 2;
 const int color_rho = 2;//use density datasets
 const int color_v = 3;//use fluid velocity magnitude datasets
-const int color_f = 1;//use force field magnitude datasets
+const int color_f = 1;//use force field magnitude datasets and using bilinear interpolation
 
 // streamlines properties
 const int streamlines = 5;
@@ -56,10 +56,13 @@ const int COLOR_BANDS = 3;
 int scalar_col = 1;           //method for scalar coloring
 int frozen = 0;               //toggles on/off the animation
 
-
-
-float get_velocity_x(float current_loca_x, float wn, float hn);
-float get_velocity_y(float current_loca_y, float wn, float hn);
+////------ setting parameters for vector field with bilinear interporation----///
+float x_min = 100;
+float y_min = 100;
+float x_max = 600;
+float y_max = 600;
+int number_points_xdir = 20;// set the number of points in x directions
+int number_points_ydir = 20; // set the number of points in y directions
 
 //------ SIMULATION CODE STARTS HERE -----------------------------------------------------------------
 
@@ -512,162 +515,114 @@ void visualize(void) {
 //        //create a matrix to rotate the velocity vector to get a arrow vector which is pi/4 angular with the velocity
         double matrixA[4] = {cos(theta), -sin(theta), sin(theta), cos(theta)};//counter clockwise rotation matrix
         double matrixB[4] = {cos(theta), sin(theta), -sin(theta), cos(theta)};//clockwise rotation matrix
+        // get start points x_min, y_min and end points x_max,y_max
 
+        float sample_locations_x [1000];
+        float sample_locations_y [1000];
 
-//        //get start points x_min, y_min and end points x_max,y_max
-//        float x_min = 200;
-//        float y_min = 200;
-//        float x_max = 500;
-//        float y_max = 600;
-//        int number_points_xdir = 10;// set the number of points in x directions
-//        int number_points_ydir = 10; // set the number of points in y directions
-////        int number_whole direction =
-//        float sample_locations_x [1000];
-//        float sample_locations_y [1000];
-//
-//        float units_distance_x = (x_max - x_min)/number_points_xdir; // get the distance of cells based on subsample range and number of points
-//        float units_distance_y = (y_max - y_min)/number_points_ydir;
-//        // get the cells between the start points and ending point loat
-//        float sample_current_loca_x = x_min;
-//        float sample_current_loca_y = y_min;
-//        //
-//        float sample_vx[1000];
-//        float sample_vy[1000];
-//
-//
-//        sample_locations_x[0] = sample_current_loca_x;
-//        sample_locations_y[0] = sample_current_loca_y;
-//
-//
-//        for(i=0; i < (number_points_ydir - 1); i++){
-//            sample_current_loca_x = x_min;
-//            for(j = 0; j <  (number_points_xdir -1); j ++){
-//                sample_current_loca_x = sample_current_loca_x + units_distance_x;
-//                sample_locations_x[i+j+1] = sample_current_loca_x;
-//            }
-//        }
-//
-//
-//        for(i=0; i < (number_points_xdir - 1); i++){
-//            sample_current_loca_y = y_min;
-//            for(j = 0; j <  (number_points_ydir -1); j ++){
-//                sample_current_loca_y = sample_current_loca_y + units_distance_y;
-//                sample_locations_y[i+j+1] = sample_current_loca_y;
-//            }
-//        }
-//
-//        printf("unit %f\n x2 %f \n",units_distance_x,sample_locations_x[1]);
-//        printf("x3 %f\n x4 %f \n",sample_locations_x[3],sample_locations_x[4]);
-//        printf("x5 %f\n x6 %f \n",sample_locations_x[5],sample_locations_x[6]);
-//        printf("x9 %f\n x10 %f \n",sample_locations_x[8],sample_locations_x[9]);
-//        printf("x11 %f\n x12 %f \n",sample_locations_x[10],sample_locations_x[11]);
-//        printf("y9 %f\n y10 %f \n",sample_locations_y[8],sample_locations_y[9]);
-//        printf("y11 %f\n y12 %f \n",sample_locations_y[10],sample_locations_y[11]);
+        float units_distance_x = (x_max - x_min) / (number_points_xdir - 1); // get the distance of cells based on subsample range and number of points
+        float units_distance_y = (y_max - y_min) / (number_points_ydir - 1);
+        // get the cells between the start points and ending point loat
+        float sample_current_loca_x = x_min;
+        float sample_current_loca_y = y_min;
+        //
+        float sample_vx[1000];
+        float sample_vy[1000];
+
+        sample_locations_x[0] = sample_current_loca_x;
+        sample_locations_y[0] = sample_current_loca_y;
+
+        for(i=0; i <= (number_points_ydir * number_points_xdir -1); i = i + number_points_xdir -1){
+            sample_current_loca_x = x_min;
+            for(j = 0; j <  (number_points_xdir - 1) ; j++){
+                sample_current_loca_x = sample_current_loca_x + units_distance_x;
+                sample_locations_x[i+j+1] = sample_current_loca_x;
+            }
+        }
+
+        for(i=0; i <= (number_points_ydir * number_points_xdir -1); i = i + number_points_xdir -1){
+            for(j = 0; j <  (number_points_xdir - 1) ; j++){
+                sample_locations_y[i+j+1] = sample_current_loca_y;
+            }
+            sample_current_loca_y = sample_current_loca_y + units_distance_y;
+        }
 
 //// ---------- get the velocity of each sample points with bilinear interpolation---- ////
 
- // for loop to save the velocitu value into array
+//  for loop to save the velocitY value into array
+        glBegin(GL_LINES);
 
+        for(i = 0; i <= (number_points_xdir * number_points_ydir - 1); i++ ) {
 
-            //compute the cell corners for the current point
-//            int x_corn1 = (int) floor(sample_locations_x[0] / wn - 1);
-//            int x_corn2 = (int) ceil(sample_locations_x[0] / wn - 1);
-//            int x_corn3 = (int) floor(sample_locations_x[0] / wn - 1);
-//            int x_corn4 = (int) ceil(sample_locations_x[0] / wn - 1);
-//            int y_corn1 = (int) floor(sample_locations_y[0] / hn - 1);
-//            int y_corn2 = (int) ceil(sample_locations_y[0] / hn - 1);
-//            int y_corn3 = (int) floor(sample_locations_y[0] / hn - 1);
-//            int y_corn4 = (int) ceil(sample_locations_y[0] / hn - 1);
-//
-//            //compute the index of the corners of a sample point
-//            int sample_index_corn1 = y_corn1 * DIM + x_corn1;
-//            int sample_index_corn2 = y_corn2 * DIM + x_corn2;
-//            int sample_index_corn3 = y_corn3 * DIM + x_corn3;
-//            int sample_index_corn4 = y_corn4 * DIM + x_corn4;
-//
-//            //compute the sample point velocity of x,y directions
-//            float samplev_x_corn1 = vx[sample_index_corn1];
-//            float samplev_x_corn2 = vx[sample_index_corn2];
-//            float samplev_x_corn3 = vx[sample_index_corn3];
-//            float samplev_x_corn4 = vx[sample_index_corn4];
-//            float samplev_y_corn1 = vy[sample_index_corn1];
-//            float samplev_y_corn2 = vy[sample_index_corn2];
-//            float samplev_y_corn3 = vy[sample_index_corn3];
-//            float samplev_y_corn4 = vy[sample_index_corn4];
-//            //compute the distance of sample points to the cell corns
-//            float sample_d2corn1x = sample_locations_x[0] - x_corn1 * wn - wn;
-//            float sample_d2corn2x = wn - sample_d2corn1x;
-//
-//            float sample_d2corn1y = sample_locations_y[0] - y_corn1 * hn - hn;
-//            float sample_d2corn3y = hn - sample_d2corn1y;
-//
-//            //compute the interpolartion x,y velocity of sample with space weighted
-//            sample_vx[0] = (samplev_x_corn1 * sample_d2corn1x * sample_d2corn1y +
-//                               samplev_x_corn2 * sample_d2corn2x * sample_d2corn1y +
-//                               samplev_x_corn3 * sample_d2corn1x * sample_d2corn3y +
-//                               samplev_x_corn4 * sample_d2corn2x * sample_d2corn3y) / (hn * wn);
-//
-//            sample_vy[0] = (samplev_y_corn1 * sample_d2corn1x * sample_d2corn1y +
-//                               samplev_y_corn2 * sample_d2corn2x * sample_d2corn1y +
-//                               samplev_y_corn3 * sample_d2corn1x * sample_d2corn3y +
-//                               samplev_y_corn4 * sample_d2corn2x * sample_d2corn3y) / (hn * wn);
-//
-//
-//        glBegin(GL_LINES);//draw velocities
-//        glColor3f(1,1,1);
-//        glVertex2f(sample_locations_x[0],sample_locations_y[0]);
-//        glVertex2f(500,500);
-//
-//
-//        glEnd();
-//
-////
+            int x_corn1 = (int) floor(sample_locations_x[i] / wn - 1);
+            int x_corn2 = (int) ceil(sample_locations_x[i] / wn - 1);
+            int x_corn3 = (int) floor(sample_locations_x[i] / wn - 1);
+            int x_corn4 = (int) ceil(sample_locations_x[i] / wn - 1);
+            int y_corn1 = (int) floor(sample_locations_y[i] / hn - 1);
+            int y_corn2 = (int) ceil(sample_locations_y[i] / hn - 1);
+            int y_corn3 = (int) floor(sample_locations_y[i] / hn - 1);
+            int y_corn4 = (int) ceil(sample_locations_y[i] / hn - 1);
 
-//
-//
-//        glBegin(GL_LINES);//draw velocities
-//
-//        for (i = 0; i < DIM; i += 2)
-//            for (j = 0; j < DIM; j += 2) {
-//                idx = (j * DIM) + i;
-//                direction_to_color(vx[idx], vy[idx], color_dir);
-//                float x1 = wn + (fftw_real) i * wn;
-//                float y1 = hn + (fftw_real) j * hn;
-//                float x2 = (wn + (fftw_real) i * wn) + vec_scale * vx[idx];
-//                float y2 = (hn + (fftw_real) j * hn) + vec_scale * vy[idx];
-//
-//                float arrowhead[2] = {(wn + (fftw_real) i * wn + vec_scale * vx[idx]),
-//                                      (hn + (fftw_real) j * hn + vec_scale * vy[idx])};
-//                float arrow[2] = {x1 - x2, y1 - y2};
-//
-//                float rotate_head_l1_x = arrow[0] * matrixA[0] + arrow[1] * matrixA[1];
-//                float rotate_head_l1_y = arrow[0] * matrixA[2] + arrow[1] * matrixA[3];
-//                float rotate_head_l1[2] = {(rotate_head_l1_x) / 3, (rotate_head_l1_y) / 3};
-//
-//                float rotate_head_l2_x = arrow[0] * matrixB[0] + arrow[1] * matrixB[1];
-//                float rotate_head_l2_y = arrow[0] * matrixB[2] + arrow[1] * matrixB[3];
-//                float rotate_head_l2[2] = {(rotate_head_l2_x) / 3, (rotate_head_l2_y) / 3};
-//
-//                float headvertex1x = (x2) + rotate_head_l1[0];
-//                float headvertex1y = (y2) + rotate_head_l1[1];
-//                float headvertex2x = (x2) + rotate_head_l2[0];
-//                float headvertex2y = (y2) + rotate_head_l2[1];
-//
-//
-//                glVertex2f(wn + (fftw_real) i * wn, hn + (fftw_real) j * hn);
-//                glVertex2f((wn + (fftw_real) i * wn) + vec_scale * vx[idx],
-//                           (hn + (fftw_real) j * hn) + vec_scale * vy[idx]);
-//
-//                glVertex2f((wn + (fftw_real) i * wn) + vec_scale * vx[idx],
-//                           (hn + (fftw_real) j * hn) + vec_scale * vy[idx]);
-//                glVertex2f(headvertex1x, headvertex1y);
-////
-//                glVertex2f((wn + (fftw_real) i * wn) + vec_scale * vx[idx],
-//                           (hn + (fftw_real) j * hn) + vec_scale * vy[idx]);
-//                glVertex2f(headvertex2x, headvertex2y);
-//
-//            }
-//        glEnd();
+            //compute the index of the corners of a sample point
+            int sample_index_corn1 = y_corn1 * DIM + x_corn1;
+            int sample_index_corn2 = y_corn2 * DIM + x_corn2;
+            int sample_index_corn3 = y_corn3 * DIM + x_corn3;
+            int sample_index_corn4 = y_corn4 * DIM + x_corn4;
+
+            //compute the sample point velocity of x,y directions
+            float samplev_x_corn1 = vx[sample_index_corn1];
+            float samplev_x_corn2 = vx[sample_index_corn2];
+            float samplev_x_corn3 = vx[sample_index_corn3];
+            float samplev_x_corn4 = vx[sample_index_corn4];
+            float samplev_y_corn1 = vy[sample_index_corn1];
+            float samplev_y_corn2 = vy[sample_index_corn2];
+            float samplev_y_corn3 = vy[sample_index_corn3];
+            float samplev_y_corn4 = vy[sample_index_corn4];
+            //compute the distance of sample points to the cell corns
+            float sample_d2corn1x = sample_locations_x[i] - x_corn1 * wn - wn;
+            float sample_d2corn2x = wn - sample_d2corn1x;
+
+            float sample_d2corn1y = sample_locations_y[i] - y_corn1 * hn - hn;
+            float sample_d2corn3y = hn - sample_d2corn1y;
+
+            //compute the interpolartion x,y velocity of sample with space weighted
+            sample_vx[i] = (samplev_x_corn1 * sample_d2corn1x * sample_d2corn1y +
+                            samplev_x_corn2 * sample_d2corn2x * sample_d2corn1y +
+                            samplev_x_corn3 * sample_d2corn1x * sample_d2corn3y +
+                            samplev_x_corn4 * sample_d2corn2x * sample_d2corn3y) / (hn * wn);
+
+            sample_vy[i] = (samplev_y_corn1 * sample_d2corn1x * sample_d2corn1y +
+                            samplev_y_corn2 * sample_d2corn2x * sample_d2corn1y +
+                            samplev_y_corn3 * sample_d2corn1x * sample_d2corn3y +
+                            samplev_y_corn4 * sample_d2corn2x * sample_d2corn3y) / (hn * wn);
+            //creating arrows
+            float x1 = sample_locations_x[i];
+            float y1 = sample_locations_y[i];
+            float x2 = sample_locations_x[i] + vec_scale * sample_vx[i];
+            float y2 = sample_locations_y[i] + vec_scale * sample_vy[i];
+            float arrow[2] = {x1 - x2, y1 - y2};
+            float rotate_head_l1_x = arrow[0] * matrixA[0] + arrow[1] * matrixA[1];
+            float rotate_head_l1_y = arrow[0] * matrixA[2] + arrow[1] * matrixA[3];
+            float rotate_head_l1[2] = {(rotate_head_l1_x) / 3, (rotate_head_l1_y) / 3};
+            float rotate_head_l2_x = arrow[0] * matrixB[0] + arrow[1] * matrixB[1];
+            float rotate_head_l2_y = arrow[0] * matrixB[2] + arrow[1] * matrixB[3];
+            float rotate_head_l2[2] = {(rotate_head_l2_x) / 3, (rotate_head_l2_y) / 3};
+            float headvertex1x = (x2) + rotate_head_l1[0];
+            float headvertex1y = (y2) + rotate_head_l1[1];
+            float headvertex2x = (x2) + rotate_head_l2[0];
+            float headvertex2y = (y2) + rotate_head_l2[1];
+            float magV = sqrt(pow(sample_vx[i],2) + pow(sample_vy[i],2)) * 50;
+            set_colormap(magV);
+            glVertex2f(x1, y1);
+            glVertex2f(x2, y2);
+
+            glVertex2f(x2, y2);
+            glVertex2f(headvertex1x, headvertex1y);
+
+            glVertex2f(x2, y2);
+            glVertex2f(headvertex2x, headvertex2y);
+        }
+        glEnd();
 
     } else if (draw_vecs == 2) {
         /** Gradient **/
@@ -854,7 +809,70 @@ void visualize(void) {
             }
         }
         glEnd();
-    } else if (draw_vecs == 5){
+    } else if (draw_vecs == 4) {
+        // draw_cones
+        float magnitude_x;
+        float rotation_angle_list[4000];
+        float rotation_angle;
+        for (i = 0; i < DIM; i += 2) {
+            for (j = 0; j < DIM; j += 2) {
+                idx = (j * DIM) + i;
+                float x1 = wn + (fftw_real) i * wn;
+                float y1 = hn + (fftw_real) j * hn;
+                float x2 = (wn + (fftw_real) i * wn) + vec_scale * vx[idx];
+                float y2 = (hn + (fftw_real) j * hn) + vec_scale * vy[idx];
+
+                if (vx[idx] > 0) {
+                        rotation_angle =  atan(vy[idx] / vx[idx]) * 180 / PI;
+                } else if (vx[idx] < 0) {
+                        rotation_angle =  atan(vy[idx] / vx[idx]) * 180 / PI + 180;
+                } else {
+                    if(vy[idx] == 0){
+                        rotation_angle = 0;
+                    }else if(vy[idx] < 0){
+                        rotation_angle = - 90;
+                    }else{
+                        rotation_angle = 90;
+                    }
+                }
+                rotation_angle_list[idx] = rotation_angle;
+ //               printf("angle %f\n", rotation_angle);
+            }
+
+        }
+
+
+
+        for (i = 0; i < DIM; i += 2) {
+            for (j = 0; j < DIM; j += 2) {
+                idx = (j * DIM) + i;
+                magnitude_x = sqrt(pow(vx[idx], 2) + pow(vy[idx], 2));
+//                direction_to_color(vx[idx], vy[idx], color_dir);
+                float radius = magnitude_x * 500;
+ //               printf("mag %f", magnitude_x);
+                set_colormap(magnitude_x*50);
+                //               direction_to_color(vx[idx], vy[idx], color_dir);
+
+                glEnable(GL_LIGHTING);
+                glEnable(GL_LIGHT0);
+                glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, GL_TRUE);
+                glEnable(GL_DEPTH_TEST);
+                glEnable(GL_COLOR_MATERIAL);
+                glPushMatrix();                                    //2.7.  Translate and rotate the canonical cone so as to be centered at the
+                glTranslatef((wn + (fftw_real) i * wn) + vec_scale * vx[idx],
+                             (hn + (fftw_real) j * hn) + vec_scale * vy[idx],
+                             0);                        //      current vertex, and aligned with the current vector
+                glRotatef(90-rotation_angle_list[idx], 0, 0, -1);
+                glRotatef(-90, 1, 0, 0);
+                //          glRotatef(-90,0,1,0);
+                glutSolidCone(radius / 4, radius, 10, magnitude_x * 500);            //2.8.  Draw the cone
+                glPopMatrix();
+                glDisable(GL_LIGHTING);
+            }
+
+        }
+    }
+    else if (draw_vecs == 5){
         int T = 100;
 
         float current_vx_list[1000]; // list of the velocity of all streamlines points
@@ -876,15 +894,6 @@ void visualize(void) {
         float dt = 0.25 * cell_diag_distance;
 
         float v_x_corn1, v_x_corn2, v_x_corn3, v_x_corn4, v_y_corn1, v_y_corn2,v_y_corn3, v_y_corn4;
-//        printf("DIM %i", DIM);
-
-//        wn + (fftw_real) DIM * wn;
-//        hn + (fftw_real) DIM * hn;
-////
-//        float interval1 = (fftw_real) 21 * wn - (fftw_real) 20 * wn;
-//        float interval2 = (fftw_real)21;
-//        int position = (int) floor( current_loca_x / wn - 1);
-//        printf("interval1 %f \n interval 2 %f \n position %f\n", interval1,interval2, position);
 
      //COMPUTING THE xy index for 4 corners
 
@@ -932,15 +941,9 @@ void visualize(void) {
 
             current_vx_list[i] = current_vx;
             current_vy_list[i] = current_vy;
-//another interpolation
-//            float d2corn1x = current_loca_x - x_index_corn1 * wn - wn;
-//            float d2corn2x = wn - d2corn1x;
-//            current_vx = (v_x_corn1 * d2corn1x + v_x_corn2 * d2corn2x + v_x_corn3 * d2corn1x + v_x_corn4 * d2corn2x ) / (2 * wn);
 
-//            float d2corn1y = current_loca_y - y_index_corn1 * hn - hn;
-//            float d2corn3y = hn - d2corn1y;
-//            current_vy = (v_y_corn1 * d2corn1y + v_y_corn3 * d2corn3y + v_y_corn2 * d2corn1y + v_y_corn4 * d2corn3y) / (2 * hn);
             current_v_mag[i] = sqrt(pow(current_vx_list[i],2) + pow(current_vy_list[i],2));
+            printf("corner1y %f\n 3y %f\n ",d2corn1y , d2corn3y);
 
             float norm_current_vx = current_vx / current_v_mag[i];
             float norm_current_vy = current_vy / current_v_mag[i];
@@ -955,50 +958,22 @@ void visualize(void) {
         }
 
         glBegin(GL_LINES);
-
             for(i = 0; i < T; i++) {
-
                 set_colormap(current_v_mag[i]*50);
                 glVertex2f(points_x_list[i], points_y_list[i]);
                 glVertex2f(points_x_list[i+1], points_y_list[i+1]);
             }
-
          glEnd();
 
 
     }
 
-
     drawLegends();
 }
 //
-float get_velocity_x(float current_loca_x, float wn, float hn){
-    float v1x;
-    int vx_index_corn1 = (int) floor(current_loca_x / wn -1);
-    int vx_index_corn2 = (int) ceil(current_loca_x / wn -1);
-    int vx_index_corn3 = (int) floor(current_loca_x / wn -1);
-    int vx_index_corn4 = (int) ceil(current_loca_x / wn -1);
 
 
 
-    v1x = vx[vx_index_corn1];
-
-    return v1x;
-//
-//
-}
-
-float get_velocity_y(float current_loca_y, float wn, float hn){
-    float v1y;
-    int vy_index_corn1 = (int) floor(current_loca_y / hn -1);
-    int vy_index_corn2 = (int) ceil(current_loca_y / hn -1);
-    int vy_index_corn3 = (int) floor(current_loca_y / hn -1);
-    int vy_index_corn4 = (int) ceil(current_loca_y / hn -1);
-
-    v1y = vy[vy_index_corn1];
-
-    return v1y;
-}
 
 
 //------ INTERACTION CODE STARTS HERE -----------------------------------------------------------------
@@ -1027,9 +1002,11 @@ void reshape(int w, int h) {
     glViewport(0.0f, 0.0f, (GLfloat) w - panel_length, (GLfloat) h);
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    gluOrtho2D(0.0, (GLdouble) w - panel_length, 0.0, (GLdouble) h);
+//    gluOrtho2D(0.0, (GLdouble) w - panel_length, 0.0, (GLdouble) h);
     winWidth = w - panel_length;
     winHeight = h;
+    gluPerspective(90, 1, 1, 1000);
+    gluLookAt(400,400,400,400,400,0,0,1,0);//
 }
 
 //keyboard: Handle key presses
