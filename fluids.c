@@ -871,7 +871,7 @@ void display(void) {
 
     } else {
         eye_x = 1000, eye_y = 1200, eye_z = 1000;
-        c_x = 400, c_y = 450, c_z = 0;
+        c_x = 350, c_y = 300, c_z = 0;
 
         if (queue_rho.size() >= stack_layers) {
             list<fftw_real *>::iterator ifx = queue_fx.begin();
@@ -881,7 +881,7 @@ void display(void) {
             list<fftw_real *>::iterator irho = queue_rho.begin();
 
             for (float ind = 1; irho != queue_rho.end(); ++ifx, ++ify, ++ivx, ++ivy, ++irho, ++ind) {
-                visualize(*ifx, *ify, *ivx, *ivy, *irho, (-400 + ind * (600 / stack_layers)), alpha, alpha2);
+                visualize(*ifx, *ify, *ivx, *ivy, *irho, (-400 + ind * (800 / stack_layers)), alpha, alpha2);
             }
         }
 
@@ -1097,31 +1097,45 @@ int main(int argc, char **argv) {
     new
             GLUI_RadioButton(radio3, "Gradient of fluid velocity");
 
+
     GLUI_Panel *obj_panel2 = new
-            GLUI_Rollout(glui, "Slice settings", true);
+            GLUI_Rollout(glui, "3D visualization", true);
+
+    GLUI_Panel *slices_panel2 = new
+            GLUI_Panel(obj_panel2, "View modes");
+    radio4 = new
+            GLUI_RadioGroup(slices_panel2, &slice_switch, 1, control_radio);
+    new
+            GLUI_RadioButton(radio4, "2D normal");
+    new
+            GLUI_RadioButton(radio4, "Slice");
+    new
+            GLUI_RadioButton(radio4, "Stream surface");
+
+    GLUI_Scrollbar *sb = new GLUI_Scrollbar(slices_panel2, "Alpha", GLUI_SCROLL_HORIZONTAL,
+                                            &alpha);
+    sb->set_float_limits(0, 1);
+
+    GLUI_Scrollbar *sb2 = new GLUI_Scrollbar(slices_panel2, "Alpha2", GLUI_SCROLL_HORIZONTAL,
+                                             &alpha2);
+    sb2->set_float_limits(0, 1);
+
+
+    GLUI_Panel *surface_panel = new
+            GLUI_Panel(obj_panel2, "Steam surface settings");
+
+
+    GLUI_Panel *obj_panel3 = new
+            GLUI_Rollout(glui, "3D settings", false);
 
     GLUI_Panel *slices_panel = new
-            GLUI_Panel(obj_panel2, "Slices");
-    radio4 = new
-            GLUI_RadioGroup(slices_panel, &slice_switch, 1, control_radio);
-    new
-            GLUI_RadioButton(radio4, "2D");
-    new
-            GLUI_RadioButton(radio4, "3D");
+            GLUI_Panel(obj_panel3, "3D settings");
 
     GLUI_Spinner *layers_spinner = new
             GLUI_Spinner(slices_panel, "Number of layers:", &stack_layers, 2, control_cb);
 
-    GLUI_Rotation *view_rot = new GLUI_Rotation(slices_panel, "Objects", view_rotate);
+    GLUI_Rotation *view_rot = new GLUI_Rotation(slices_panel, "View rotation", view_rotate);
     view_rot->set_spin(1.0);
-
-    GLUI_Scrollbar *sb = new GLUI_Scrollbar(slices_panel, "Alpha", GLUI_SCROLL_HORIZONTAL,
-                                            &alpha);
-    sb->set_float_limits(0, 1);
-
-    GLUI_Scrollbar *sb2 = new GLUI_Scrollbar(slices_panel, "Alpha2", GLUI_SCROLL_HORIZONTAL,
-                                             &alpha2);
-    sb2->set_float_limits(0, 1);
 
     GLUI_Spinner *min_spinner2 = new
             GLUI_Spinner(slices_panel, "Eye position x:", &eye_x, 2, control_cb);
