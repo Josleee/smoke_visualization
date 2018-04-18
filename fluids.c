@@ -25,8 +25,10 @@ GLUI_RadioGroup *radio2;
 GLUI_RadioGroup *radio3;
 GLUI_RadioGroup *radio4;
 GLUI_RadioGroup *radio5;
+GLUI_Checkbox *sl_checkbox;
 GLUI_Spinner *min_spinner, *max_spinner;
 int minimal = 1, maximal = 256;
+int enable_mice = 0;
 
 int stack_layers = 60;
 float number_of_seed = 60;
@@ -39,6 +41,9 @@ std::list<fftw_real *> queue_fy;
 std::list<fftw_real *> queue_rho;
 
 float sax, say, sbx, sby = 0;
+
+float seed_point_x = 300; // set streamline starting points
+float seed_point_y = 300;
 
 //--- SIMULATION PARAMETERS ------------------------------------------------------------------------
 const int DIM = 60;            //size of simulation grid
@@ -573,6 +578,7 @@ void visualize(fftw_real *fx, fftw_real *fy, fftw_real *vx, fftw_real *vy, fftw_
 
 
     if (draw_vecs == 1) {
+        /** normal **/
 
         double theta = PI / 4;
 //        float xhead;
@@ -627,7 +633,7 @@ void visualize(fftw_real *fx, fftw_real *fy, fftw_real *vx, fftw_real *vy, fftw_
             }
         glEnd();
 
-    } else if (draw_vecs == 2) {
+    } else if (draw_vecs == 2 || draw_vecs == 3) {
         /** Gradient **/
 
         double theta = PI / 4;
@@ -716,7 +722,7 @@ void visualize(fftw_real *fx, fftw_real *fy, fftw_real *vx, fftw_real *vy, fftw_
         }
         glEnd();
 
-    } else if (draw_vecs == 3) {
+    } else if (draw_vecs == -1) {
         /** Gradient of velocity magnitude **/
 
         double theta = PI / 4;
@@ -812,6 +818,96 @@ void visualize(fftw_real *fx, fftw_real *fy, fftw_real *vx, fftw_real *vy, fftw_
             }
         }
         glEnd();
+
+    } else if (draw_vecs == 4) {
+        int T = 100;
+
+        float current_vx_list[1000]; // list of the velocity of all streamlines points
+        float current_vy_list[1000];
+
+
+        float current_vx; // current point's velocity
+        float current_vy;
+        float current_v[2];
+
+        float points_x_list[1000]; // lists of points location
+        float points_y_list[1000];
+
+        float current_v_mag[1000];//
+
+        float current_loca_x = seed_point_x;
+        float current_loca_y = seed_point_y;
+        float cell_diag_distance = sqrt(pow(wn, 2) + pow(hn, 2));
+        float dt = 0.25 * cell_diag_distance;
+
+        float v_x_corn1, v_x_corn2, v_x_corn3, v_x_corn4, v_y_corn1, v_y_corn2, v_y_corn3, v_y_corn4;
+
+        //COMPUTING THE xy index for 4 corners
+        points_x_list[0] = current_loca_x;
+        points_y_list[0] = current_loca_y;
+
+        for (i = 0; i < T; i++) {
+            //COMPUTING THE xy for 4 corners
+            int x_index_corn1 = (int) floor(current_loca_x / wn - 1);
+            int x_index_corn2 = (int) ceil(current_loca_x / wn - 1);
+            int x_index_corn3 = (int) floor(current_loca_x / wn - 1);
+            int x_index_corn4 = (int) ceil(current_loca_x / wn - 1);
+            int y_index_corn1 = (int) floor(current_loca_y / hn - 1);
+            int y_index_corn2 = (int) ceil(current_loca_y / hn - 1);
+            int y_index_corn3 = (int) floor(current_loca_y / hn - 1);
+            int y_index_corn4 = (int) ceil(current_loca_y / hn - 1);
+            //COMPUTING THE index for 4 corners
+            int index_corn1 = y_index_corn1 * DIM + x_index_corn1;
+            int index_corn2 = y_index_corn2 * DIM + x_index_corn2;
+            int index_corn3 = y_index_corn3 * DIM + x_index_corn3;
+            int index_corn4 = y_index_corn4 * DIM + x_index_corn4;
+            //compute the velocity of x,y directions
+            v_x_corn1 = vx[index_corn1];
+            v_x_corn2 = vx[index_corn2];
+            v_x_corn3 = vx[index_corn3];
+            v_x_corn4 = vx[index_corn4];
+            v_y_corn1 = vy[index_corn1];
+            v_y_corn2 = vy[index_corn2];
+            v_y_corn3 = vy[index_corn3];
+            v_y_corn4 = vy[index_corn4];
+
+            float d2corn1x = current_loca_x - x_index_corn1 * wn - wn;
+            float d2corn2x = wn - d2corn1x;
+
+            float d2corn1y = current_loca_y - y_index_corn1 * hn - hn;
+            float d2corn3y = hn - d2corn1y;
+
+            //interpolation with space weighted
+            current_vx = (v_x_corn1 * d2corn1x * d2corn1y + v_x_corn2 * d2corn2x * d2corn1y +
+                          +v_x_corn3 * d2corn1x * d2corn3y + v_x_corn4 * d2corn2x * d2corn3y) / (hn * wn);
+
+            current_vy = (v_y_corn1 * d2corn1x * d2corn1y + v_y_corn2 * d2corn2x * d2corn1y +
+                          +v_y_corn3 * d2corn1x * d2corn3y + v_y_corn4 * d2corn2x * d2corn3y) / (hn * wn);
+
+            current_vx_list[i] = current_vx;
+            current_vy_list[i] = current_vy;
+            //another interpolation
+            current_v_mag[i] = sqrt(pow(current_vx_list[i], 2) + pow(current_vy_list[i], 2));
+
+            float norm_current_vx = current_vx / current_v_mag[i];
+            float norm_current_vy = current_vy / current_v_mag[i];
+
+
+            current_loca_x = current_loca_x * (1 + current_vx * dt);
+            current_loca_y = current_loca_y * (1 + current_vy * dt);
+
+            points_x_list[i + 1] = current_loca_x;
+            points_y_list[i + 1] = current_loca_y;
+        }
+
+        glBegin(GL_LINES);
+        for (i = 0; i < T; i++) {
+            set_colormap(current_v_mag[i] * 50, alpha2);
+            glVertex2f(points_x_list[i], points_y_list[i]);
+            glVertex2f(points_x_list[i + 1], points_y_list[i + 1]);
+        }
+        glEnd();
+
     }
 
 
@@ -1121,6 +1217,11 @@ void drag(int mx, int my) {
     rho[Y * DIM + X] = 10.0f;
     lmx = mx;
     lmy = my;
+
+    if (enable_mice == 1) {
+        seed_point_x = mx;
+        seed_point_y = my;
+    }
 }
 
 
@@ -1149,6 +1250,14 @@ void control_radio(int control) {
         color_dir = 1;
         min_spinner->disable();
         max_spinner->disable();
+    }
+}
+
+void control_mice(int control) {
+    if (radio3->get_int_val() == 4) {
+        sl_checkbox->enable();
+    } else {
+        sl_checkbox->disable();
     }
 }
 
@@ -1222,7 +1331,7 @@ int main(int argc, char **argv) {
     GLUI_Panel *set_panel = new
             GLUI_Panel(obj_panel, "Colormap dataset");
     radio2 = new
-            GLUI_RadioGroup(set_panel, &color_map_dataset, 1, control_radio);
+            GLUI_RadioGroup(set_panel, &color_map_dataset, 1);
     new
             GLUI_RadioButton(radio2, "Black and white");
     new
@@ -1232,10 +1341,12 @@ int main(int argc, char **argv) {
     new
             GLUI_RadioButton(radio2, "Fluid velocity magnitude");
 
+
     GLUI_Panel *vecs_panel = new
             GLUI_Panel(obj_panel, "Draw vectors");
+
     radio3 = new
-            GLUI_RadioGroup(vecs_panel, &draw_vecs, 1, control_radio);
+            GLUI_RadioGroup(vecs_panel, &draw_vecs, 1, control_mice);
     new
             GLUI_RadioButton(radio3, "None");
     new
@@ -1244,6 +1355,11 @@ int main(int argc, char **argv) {
             GLUI_RadioButton(radio3, "Gradient of fluid density");
     new
             GLUI_RadioButton(radio3, "Gradient of fluid velocity");
+    new
+            GLUI_RadioButton(radio3, "Stream line");
+
+    sl_checkbox = new GLUI_Checkbox(vecs_panel, "Enable mouse seed point", &enable_mice, 1);
+    sl_checkbox->disable();
 
 
     GLUI_Panel *obj_panel2 = new
@@ -1252,7 +1368,7 @@ int main(int argc, char **argv) {
     GLUI_Panel *slices_panel2 = new
             GLUI_Panel(obj_panel2, "View modes");
     radio4 = new
-            GLUI_RadioGroup(slices_panel2, &slice_switch, 1, control_radio);
+            GLUI_RadioGroup(slices_panel2, &slice_switch, 1);
     new
             GLUI_RadioButton(radio4, "2D normal");
     new
@@ -1275,7 +1391,7 @@ int main(int argc, char **argv) {
     GLUI_Panel *surface_seed_panel = new
             GLUI_Panel(obj_panel2, "Number of seeds");
     GLUI_Scrollbar *nos = new GLUI_Scrollbar(surface_seed_panel, "sax", GLUI_SCROLL_HORIZONTAL,
-                                              &number_of_seed);
+                                             &number_of_seed);
     nos->set_float_limits(10, 60);
 
 
@@ -1348,3 +1464,4 @@ int main(int argc, char **argv) {
     glutMainLoop();
     return 0;
 }
+
