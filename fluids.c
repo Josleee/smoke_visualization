@@ -29,6 +29,7 @@ int minimal = 1, maximal = 256;
 
 int stack_layers = 50;
 float alpha = 0.5;
+float alpha2 = 0.5;
 std::list<fftw_real *> queue_vx;
 std::list<fftw_real *> queue_vy;
 std::list<fftw_real *> queue_fx;
@@ -433,7 +434,8 @@ void storeInQueue() {
 }
 
 //visualize: This is the main visualization function
-void visualize(fftw_real *fx, fftw_real *fy, fftw_real *vx, fftw_real *vy, fftw_real *rho, float z, float alpha) {
+void visualize(fftw_real *fx, fftw_real *fy, fftw_real *vx, fftw_real *vy, fftw_real *rho, float z, float alpha,
+               float alpha2) {
     int i, j, idx, idx0, idx1, idx2, idx3;
     double px0, py0, px1, py1, px2, py2, px3, py3;
     fftw_real wn = (fftw_real) winWidth / (fftw_real) (DIM + 1);   // Grid cell width
@@ -618,7 +620,7 @@ void visualize(fftw_real *fx, fftw_real *fy, fftw_real *vx, fftw_real *vy, fftw_
                 float headvertex2x = (x2) + rotate_head_l2[0];
                 float headvertex2y = (y2) + rotate_head_l2[1];
 
-
+//                set_colormap(rho[idx0], alpha2);
                 glVertex3f(wn + (fftw_real) i * wn, hn + (fftw_real) j * hn, z);
                 glVertex3f((wn + (fftw_real) i * wn) + vec_scale * vx[idx],
                            (hn + (fftw_real) j * hn) + vec_scale * vy[idx], z);
@@ -690,10 +692,10 @@ void visualize(fftw_real *fx, fftw_real *fy, fftw_real *vx, fftw_real *vy, fftw_
                 fftw_real pxm = (px0 + px1 + px2 + px3) / 4;
                 fftw_real pym = (py0 + py1 + py2 + py3) / 4;
 
-                set_colormap(rho[idx0], alpha);
+                set_colormap(rho[idx0], alpha2);
                 glVertex3f(pxm, pym, z);
 
-                set_colormap(rho[idx1], alpha);
+                set_colormap(rho[idx1], alpha2);
                 glVertex3f(pxm + d_x, pym + d_y, z);
 
                 fftw_real pxn = pxm + d_x;
@@ -787,10 +789,10 @@ void visualize(fftw_real *fx, fftw_real *fy, fftw_real *vx, fftw_real *vy, fftw_
                 fftw_real pxm = (px0 + px1 + px2 + px3) / 4;
                 fftw_real pym = (py0 + py1 + py2 + py3) / 4;
 
-                set_colormap(rho[idx0], alpha);
+                set_colormap(rho[idx0], alpha2);
                 glVertex3f(pxm, pym, z);
 
-                set_colormap(rho[idx1], alpha);
+                set_colormap(rho[idx1], alpha2);
                 glVertex3f(pxm + d_x, pym + d_y, z);
 
                 fftw_real pxn = pxm + d_x;
@@ -865,7 +867,7 @@ void display(void) {
     if (slice_switch == 0) {
         eye_x = winWidth / 2, eye_y = winHeight / 2, eye_z = 400;
         c_x = winWidth / 2, c_y = winHeight / 2, c_z = 0;
-        visualize(fx, fy, vx, vy, rho, 0, 1);
+        visualize(fx, fy, vx, vy, rho, 0, 1, 1);
 
     } else {
         eye_x = 1000, eye_y = 1200, eye_z = 1000;
@@ -879,7 +881,7 @@ void display(void) {
             list<fftw_real *>::iterator irho = queue_rho.begin();
 
             for (float ind = 1; irho != queue_rho.end(); ++ifx, ++ify, ++ivx, ++ivy, ++irho, ++ind) {
-                visualize(*ifx, *ify, *ivx, *ivy, *irho, (-400 + ind * (600 / stack_layers)), alpha);
+                visualize(*ifx, *ify, *ivx, *ivy, *irho, (-400 + ind * (600 / stack_layers)), alpha, alpha2);
             }
         }
 
@@ -1116,6 +1118,10 @@ int main(int argc, char **argv) {
     GLUI_Scrollbar *sb = new GLUI_Scrollbar(slices_panel, "Alpha", GLUI_SCROLL_HORIZONTAL,
                                             &alpha);
     sb->set_float_limits(0, 1);
+
+    GLUI_Scrollbar *sb2 = new GLUI_Scrollbar(slices_panel, "Alpha2", GLUI_SCROLL_HORIZONTAL,
+                                             &alpha2);
+    sb2->set_float_limits(0, 1);
 
     GLUI_Spinner *min_spinner2 = new
             GLUI_Spinner(slices_panel, "Eye position x:", &eye_x, 2, control_cb);
