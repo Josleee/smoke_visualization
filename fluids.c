@@ -60,12 +60,12 @@ rfftwnd_plan plan_rc, plan_cr;  //simulation domain discretization
 float view_rotate[16] = {1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1};
 int winWidth, winHeight;      //size of the graphics window, in pixels
 int color_dir = 1;            //use direction color-coding or not
-int slice_switch = 2;
+int slice_switch = 0;
 float vec_scale = 1000;            //scaling of hedgehogs
 int draw_smoke = 1;           //draw the smoke or not
 float clamp_range = 1;
 int draw_vecs = 0;              //draw the vector field or not
-int color_map_dataset = 2;
+int color_map_dataset = 0;
 const int color_rho = 2;//use density datasets
 const int color_v = 3;//use fluid velocity magnitude datasets
 const int color_f = 1;//use force field magnitude datasets
@@ -821,10 +821,10 @@ void visualize(fftw_real *fx, fftw_real *fy, fftw_real *vx, fftw_real *vy, fftw_
 
     } else if (draw_vecs == 4) {
         int T = 100;
+        int limit = 100;
 
         float current_vx_list[1000]; // list of the velocity of all streamlines points
         float current_vy_list[1000];
-
 
         float current_vx; // current point's velocity
         float current_vy;
@@ -884,14 +884,36 @@ void visualize(fftw_real *fx, fftw_real *fy, fftw_real *vx, fftw_real *vy, fftw_
             current_vy = (v_y_corn1 * d2corn1x * d2corn1y + v_y_corn2 * d2corn2x * d2corn1y +
                           +v_y_corn3 * d2corn1x * d2corn3y + v_y_corn4 * d2corn2x * d2corn3y) / (hn * wn);
 
+            if (isnan(current_vx)) {
+                current_vx = 1;
+                limit = i + 1;
+                break;
+            }
+            if (isnan(current_vy)) {
+                current_vy = 1;
+                limit = i + 1;
+                break;
+            }
+
             current_vx_list[i] = current_vx;
             current_vy_list[i] = current_vy;
             //another interpolation
-            current_v_mag[i] = sqrt(pow(current_vx_list[i], 2) + pow(current_vy_list[i], 2));
+            // cout<<current_vx_list[i]<<" "<<current_vy_list[i]<<endl;
 
+            if (isnan(current_vx_list[i]) && isnan(current_vy_list[i])) {
+                current_v_mag[i] = 1;
+            } else if (isnan(current_vx_list[i])) {
+                current_v_mag[i] = sqrt(pow(current_vy_list[i], 2));
+            } else if (isnan(current_vy_list[i])) {
+                current_v_mag[i] = sqrt(pow(current_vx_list[i], 2));
+            } else {
+                current_v_mag[i] = sqrt(pow(current_vx_list[i], 2) + pow(current_vy_list[i], 2));
+            }
+
+            // cout << current_v_mag[i] << endl;
             float norm_current_vx = current_vx / current_v_mag[i];
             float norm_current_vy = current_vy / current_v_mag[i];
-
+            // cout << norm_current_vx << " " << norm_current_vy << endl;
 
             current_loca_x = current_loca_x * (1 + current_vx * dt);
             current_loca_y = current_loca_y * (1 + current_vy * dt);
@@ -901,7 +923,7 @@ void visualize(fftw_real *fx, fftw_real *fy, fftw_real *vx, fftw_real *vy, fftw_
         }
 
         glBegin(GL_LINES);
-        for (i = 0; i < T; i++) {
+        for (i = 0; i < limit; i++) {
             set_colormap(current_v_mag[i] * 50, alpha2);
             glVertex2f(points_x_list[i], points_y_list[i]);
             glVertex2f(points_x_list[i + 1], points_y_list[i + 1]);
@@ -909,7 +931,6 @@ void visualize(fftw_real *fx, fftw_real *fy, fftw_real *vx, fftw_real *vy, fftw_
         glEnd();
 
     }
-
 
     drawLegends();
 }
