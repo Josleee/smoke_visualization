@@ -27,7 +27,8 @@ GLUI_RadioGroup *radio5;
 GLUI_Spinner *min_spinner, *max_spinner;
 int minimal = 1, maximal = 256;
 
-int stack_layers = 20;
+int stack_layers = 60;
+float number_of_seed = 60;
 float alpha = 0.5;
 float alpha2 = 0.5;
 std::list<fftw_real *> queue_vx;
@@ -867,7 +868,6 @@ void drawStreamSurface(float alpha) {
     float arr_y[DIM] = {};
     float tmp_pre_x1 = -1;
     float tmp_pre_y1 = -1;
-    float number_of_seed = 60;
 
     for (int j = 0; j < number_of_seed; ++j) {
         arr_x[j] = (sbx - sax) / (number_of_seed - 1) * j + sax;
@@ -881,13 +881,15 @@ void drawStreamSurface(float alpha) {
     list<fftw_real *>::iterator irho = queue_rho.begin();
 
     for (int i = 0; i < stack_layers; ++i, ++ifx, ++ify, ++ivx, ++ivy, ++irho) {
-        float z0 = 400 - 800 / stack_layers * i;
-        float z = 400 - 800 / stack_layers * (i + 1);
+        float z0 = -400 + 800 / stack_layers * i;
+        float z = -400 + 800 / stack_layers * (i + 1);
+        glShadeModel(GL_SMOOTH);
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
         glBegin(GL_TRIANGLES);
 
         for (int j = 0; j < number_of_seed; ++j) {
             if (arr_x[j] < 0 || arr_y[j] < 0 || arr_x[j] > winWidth || arr_y[j] > winHeight) {
+//                cout<<"abnormal 0 -> "<<j<<" x:"<<arr_x[j]<<" y:"<<arr_y[j]<<endl;
                 tmp_pre_x1 = -1;
                 tmp_pre_y1 = -1;
                 arr_x[j] = -1;
@@ -896,18 +898,22 @@ void drawStreamSurface(float alpha) {
             }
 
             int dimension = int(floor(arr_x[j] / winWidth * DIM) + floor(arr_y[j] / winHeight * DIM) * DIM);
-            float dx = (*ivx)[dimension] * 1000;
-            float dy = (*ivy)[dimension] * 1000;
+            float dx = (*ivx)[dimension] * 100;
+            float dy = (*ivy)[dimension] * 100;
 //            cout << "DX: " << dx << " DY: " << dy << " i: " << i << endl;
 
             if (tmp_pre_x1 < 0 || tmp_pre_y1 < 0) {
+//                cout << "abnormal 1 -> " << j << " x:" << tmp_pre_x1 << " y:" << tmp_pre_y1 << " nx:" << arr_x[j]
+//                     << " ny:" << arr_y[j] << endl;
                 tmp_pre_x1 = arr_x[j];
                 tmp_pre_y1 = arr_y[j];
             } else if (arr_x[j - 1] < 0 || arr_y[j - 1] < 0) {
+//                cout << "abnormal 2" << endl;
                 tmp_pre_x1 = arr_x[j];
                 tmp_pre_y1 = arr_y[j];
             } else if (arr_x[j] + dx < 0 || arr_x[j] + dx > winWidth ||
                        arr_y[j] + dy < 0 || arr_y[j] + dy > winHeight) {
+//                cout << "abnormal 3" << endl;
                 tmp_pre_x1 = -1;
                 tmp_pre_y1 = -1;
                 arr_x[j] = -1;
@@ -925,16 +931,25 @@ void drawStreamSurface(float alpha) {
 //                set_colormap(rho[idx2], alpha);
                 glVertex3f(arr_x[j - 1], arr_y[j - 1], z);
 
-////                set_colormap(rho[idx0], alpha);
-//                glVertex3f(arr_x[j] + dx, arr_y[j] + dy, z);
-////                set_colormap(rho[idx1], alpha);
-//                glVertex3f(arr_x[j], arr_y[j], z0);
-////                set_colormap(rho[idx2], alpha);
-//                glVertex3f(arr_x[j - 1], arr_y[j - 1], z);
+//                set_colormap(rho[idx1], alpha);
+                glVertex3f(arr_x[j], arr_y[j], z0);
+//                set_colormap(rho[idx2], alpha);
+                glVertex3f(arr_x[j - 1], arr_y[j - 1], z);
+//                set_colormap(rho[idx0], alpha);
+                glVertex3f(arr_x[j] + dx, arr_y[j] + dy, z);
+            }
 
+            if (j == stack_layers - 1) {
+//                cout << "Set to 0, J: " << j << endl;
+                tmp_pre_x1 = -1;
+                tmp_pre_y1 = -1;
+            } else {
                 tmp_pre_x1 = arr_x[j];
                 tmp_pre_y1 = arr_y[j];
             }
+
+            arr_x[j] = arr_x[j] + dx;
+            arr_y[j] = arr_y[j] + dy;
         }
         glEnd();
     }
@@ -1245,18 +1260,24 @@ int main(int argc, char **argv) {
     new
             GLUI_RadioButton(radio4, "Stream surface");
 
-    GLUI_Scrollbar *sb = new GLUI_Scrollbar(slices_panel2, "Alpha", GLUI_SCROLL_HORIZONTAL,
+    GLUI_Panel *trans_panel = new
+            GLUI_Panel(obj_panel2, "Transparency settings");
+    GLUI_Scrollbar *sb = new GLUI_Scrollbar(trans_panel, "Alpha", GLUI_SCROLL_HORIZONTAL,
                                             &alpha);
     sb->set_float_limits(0, 1);
 
-    GLUI_Scrollbar *sb2 = new GLUI_Scrollbar(slices_panel2, "Alpha2", GLUI_SCROLL_HORIZONTAL,
+    GLUI_Scrollbar *sb2 = new GLUI_Scrollbar(trans_panel, "Alpha2", GLUI_SCROLL_HORIZONTAL,
                                              &alpha2);
     sb2->set_float_limits(0, 1);
 
+    GLUI_Panel *surface_seed_panel = new
+            GLUI_Panel(obj_panel2, "Number of seeds");
+    GLUI_Scrollbar *nos = new GLUI_Scrollbar(surface_seed_panel, "sax", GLUI_SCROLL_HORIZONTAL,
+                                              &number_of_seed);
+    nos->set_float_limits(10, 60);
 
     GLUI_Panel *surface_panel = new
-            GLUI_Panel(obj_panel2, "Steam surface settings");
-
+            GLUI_Panel(obj_panel2, "Steam surface seed line");
     GLUI_Scrollbar *saxs = new GLUI_Scrollbar(surface_panel, "sax", GLUI_SCROLL_HORIZONTAL,
                                               &sax);
     saxs->set_float_limits(0, winWidth);
