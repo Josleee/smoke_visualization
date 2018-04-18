@@ -26,6 +26,7 @@ GLUI_RadioGroup *radio5;
 GLUI_Spinner *min_spinner, *max_spinner;
 int minimal = 1, maximal = 256;
 
+int stack_layers = 3;
 std::queue<fftw_real *> queue_vx;
 std::queue<fftw_real *> queue_vy;
 std::queue<fftw_real *> queue_fx;
@@ -375,7 +376,7 @@ void drawLegends() {
 
 void storeInQueue() {
     int dim = DIM * 2 * (DIM / 2 + 1);
-    int size = 20;
+    int size = stack_layers;
 
     fftw_real *deepCopyFx = new fftw_real[dim];
     for (size_t i = 0; i < dim; ++i)
@@ -437,7 +438,7 @@ void storeInQueue() {
 }
 
 //visualize: This is the main visualization function
-void visualize(fftw_real *fx, fftw_real *fy, fftw_real *vx, fftw_real *vy, fftw_real *rho, float z) {
+void visualize(fftw_real *fx, fftw_real *fy, fftw_real *vx, fftw_real *vy, fftw_real *rho, float z, float alpha) {
     int i, j, idx, idx0, idx1, idx2, idx3;
     double px0, py0, px1, py1, px2, py2, px3, py3;
     fftw_real wn = (fftw_real) winWidth / (fftw_real) (DIM + 1);   // Grid cell width
@@ -831,16 +832,16 @@ void visualize(fftw_real *fx, fftw_real *fy, fftw_real *vx, fftw_real *vy, fftw_
 
 
 //------ INTERACTION CODE STARTS HERE -----------------------------------------------------------------
-float eye_x = 275, eye_y = 275, eye_z = 400;
-float c_x = 275, c_y = 275, c_z = 0;
+float eye_x = 0, eye_y = 0, eye_z = 400;
+float c_x = 0, c_y = 0, c_z = 0;
 float up_x = 0, up_y = 1, up_z = 0;
 
 //display: Handle window redrawing events. Simply delegates to visualize().
 void display(void) {
     storeInQueue();
 
-//    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+//    glEnable(GL_DEPTH_TEST);
 
     double w = glutGet(GLUT_WINDOW_WIDTH);
     double h = glutGet(GLUT_WINDOW_HEIGHT);
@@ -848,34 +849,79 @@ void display(void) {
     glViewport(0.0f, 0.0f, (GLfloat) w - panel_length, (GLfloat) h);
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    gluPerspective(90, w / h, 0.1, 1000);
+    if (slice_switch == 0) {
+        gluPerspective(90, (w - panel_length) / h, 1.0f, 2000.0f);
+    } else {
+        gluPerspective(60, (w - panel_length) / h, 1.0f, 2000.0f);
+    }
 //    gluOrtho2D(0.0, (GLdouble) w - panel_length, 0.0, (GLdouble) h);
 
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
     glTranslatef(0, 0, 0);
-//    glTranslatef(0, 0, -5);
-//    glRotatef(t, 0, 1, 1);
 
     glMultMatrixf(view_rotate);
     gluLookAt(eye_x, eye_y, eye_z, c_x, c_y, c_z, up_x, up_y, up_z);
 //    glRotatef(t, 0, 1, 1);
 
-    visualize(fx, fy, vx, vy, queue_rho.front(), 0);
+    if (slice_switch == 0) {
+        visualize(fx, fy, vx, vy, rho, 0, 1);
 
-    glFlush();
+    } else {
+        eye_x = 1000, eye_y = 1200, eye_z = 1000;
+        c_x = 500, c_y = 450, c_z = 0;
+
+        if (queue_rho.size() >= stack_layers) {
+            queue<fftw_real *> tmp_queue_vx;
+            queue<fftw_real *> tmp_queue_vy;
+            queue<fftw_real *> tmp_queue_fx;
+            queue<fftw_real *> tmp_queue_fy;
+            queue<fftw_real *> tmp_queue_rho;
+
+            for (int i = 0; i < stack_layers; i++) {
+//            fftw_real *tmp_rho = queue_rho.front();
+//            tmp_queue_rho.push(tmp);
+//            queue_rho.pop();
+//
+//            fftw_real *tmp_rho = queue_rho.front();
+//            tmp_queue_rho.push(tmp);
+//            queue_rho.pop();
+//
+//            fftw_real *tmp_rho = queue_rho.front();
+//            tmp_queue_rho.push(tmp);
+//            queue_rho.pop();
+//
+//            fftw_real *tmp_rho = queue_rho.front();
+//            tmp_queue_rho.push(tmp);
+//            queue_rho.pop();
+
+                fftw_real *tmp_rho = queue_rho.front();
+                tmp_queue_rho.push(tmp_rho);
+                visualize(vx, vy, vx, vy, tmp_rho, -i * 80, 1);
+                queue_rho.pop();
+            }
+
+            for (int i = 0; i < tmp_queue_rho.size(); i++) {
+                queue_rho.push(tmp_queue_rho.front());
+                tmp_queue_rho.pop();
+            }
+
+        }
+
+
+    }
+
+//    glFlush();
     glutSwapBuffers();
+
 }
 
 //reshape: Handle window resizing (reshaping) events
 void reshape(int w, int h) {
-    float panel_length = 215;
 //    glViewport(0.0f, 0.0f, (GLfloat) w - panel_length, (GLfloat) h);
 //    glMatrixMode(GL_PROJECTION);
 //    glLoadIdentity();
 //    gluOrtho2D(0.0, (GLdouble) w - panel_length, 0.0, (GLdouble) h);
-    winWidth = w - panel_length;
-    winHeight = h;
 }
 
 //keyboard: Handle key presses
@@ -1002,9 +1048,18 @@ int main(int argc, char **argv) {
     printf("a:     toggle the animation on/off\n");
     printf("q:     quit\n\n");
 
+    float panel_length = 215;
+    float w = 1000;
+    float h = 800;
+
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE | GLUT_DEPTH);
-    glutInitWindowSize(1000, 800);
+    glutInitWindowSize(w, h);
+
+    winWidth = w - panel_length;
+    winHeight = h;
+    eye_x = winWidth / 2, eye_y = winHeight / 2, eye_z = 400;
+    c_x = winWidth / 2, c_y = winHeight / 2, c_z = 0;
 
     main_window = glutCreateWindow(WINDOW_TITLE_PREFIX);
 
