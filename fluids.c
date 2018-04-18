@@ -344,10 +344,6 @@ void drawLegends() {
         }
 
         set_colormap(vy, 1);
-//        glVertex2f(pLeft, (0.5 * i) + pTop); //(x,y top left)
-//        glVertex2f(pRight, (0.5 * i) + pTop); //(x,y bottom left)
-//        glVertex2f(pLeft, (0.5 * (i + 1)) + pTop); //(x,y bottom right)
-//        glVertex2f(pRight, (0.5 * (i + 1)) + pTop); //(x,y top right)
         glVertex3f(pLeft, (0.5 * i) + pTop, 0); //(x,y top left)
         glVertex3f(pRight, (0.5 * i) + pTop, 0); //(x,y bottom left)
         glVertex3f(pLeft, (0.5 * (i + 1)) + pTop, 0); //(x,y bottom right)
@@ -367,14 +363,6 @@ void drawLegends() {
     glVertex3f(pLeft, 500 + pTop, 0); //(x,y bottom right)
     glVertex3f(pRight, pTop, 0); //(x,y bottom left)
     glVertex3f(pRight, 500 + pTop, 0); //(x,y bottom left)
-//    glVertex2f(pLeft, pTop); //(x,y top left)
-//    glVertex2f(pRight, pTop); //(x,y bottom left)
-//    glVertex2f(pLeft, 500 + pTop); //(x,y bottom right)
-//    glVertex2f(pRight, 500 + pTop); //(x,y top right)
-//    glVertex2f(pLeft, pTop); //(x,y bottom right)
-//    glVertex2f(pLeft, 500 + pTop); //(x,y bottom right)
-//    glVertex2f(pRight, pTop); //(x,y bottom left)
-//    glVertex2f(pRight, 500 + pTop); //(x,y bottom left)
     glEnd();
 }
 
@@ -874,6 +862,66 @@ void drawCubeContour() {
 }
 
 
+void drawStreamSurface() {
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    glBegin(GL_TRIANGLES);
+
+    float arr_x[60] = {};
+    float arr_y[60] = {};
+    float tmp_pre_x = 0;
+    float tmp_pre_y = 0;
+
+    for (int j = 0; j < 60; ++j) {
+        arr_x[j] = (sbx - sax) / (60 - 1) * j +sax;
+        arr_y[j] = (sby - say) / (60 - 1) * j +say;
+        cout<<arr_x[j]<<" "<<arr_y[j]<<endl;
+    }
+
+
+    for (int i = 0; i < stack_layers; ++i) {
+        float z = 400 - 800 / stack_layers * i;
+
+//        for (j = 0; j < DIM - 1; j++)            //draw smoke
+//        {
+//            for (i = 0; i < DIM - 1; i++) {
+//                px0 = wn + (fftw_real) i * wn;
+//                py0 = hn + (fftw_real) j * hn;
+//
+//                idx0 = (j * DIM) + i;
+//
+//                px1 = wn + (fftw_real) i * wn;
+//                py1 = hn + (fftw_real) (j + 1) * hn;
+//                idx1 = ((j + 1) * DIM) + i;
+//
+//                px2 = wn + (fftw_real) (i + 1) * wn;
+//                py2 = hn + (fftw_real) (j + 1) * hn;
+//                idx2 = ((j + 1) * DIM) + (i + 1);
+//
+//                px3 = wn + (fftw_real) (i + 1) * wn;
+//                py3 = hn + (fftw_real) j * hn;
+//                idx3 = (j * DIM) + (i + 1);
+//
+//                set_colormap(rho[idx0], alpha);
+//                glVertex3f(px0, py0, z);
+//                set_colormap(rho[idx1], alpha);
+//                glVertex3f(px1, py1, z);
+//                set_colormap(rho[idx2], alpha);
+//                glVertex3f(px2, py2, z);
+//
+//                set_colormap(rho[idx0], alpha);
+//                glVertex3f(px0, py0, z);
+//                set_colormap(rho[idx2], alpha);
+//                glVertex3f(px2, py2, z);
+//                set_colormap(rho[idx3], alpha);
+//                glVertex3f(px3, py3, z);
+//            }
+//        }
+
+    }
+    glEnd();
+}
+
+
 //------ INTERACTION CODE STARTS HERE -----------------------------------------------------------------
 float eye_x = 0, eye_y = 0, eye_z = 400;
 float c_x = 0, c_y = 0, c_z = 0;
@@ -935,14 +983,14 @@ void display(void) {
         eye_x = 1000, eye_y = 1200, eye_z = 1000;
         c_x = 350, c_y = 300, c_z = 0;
 
-        drawCubeContour();
-
         glBegin(GL_LINES);
         glColor4f(255, 0, 0, 1);
         glVertex3f(sax, say, 400);
         glVertex3f(sbx, sby, 400);
         glEnd();
 
+        drawCubeContour();
+        drawStreamSurface();
     }
 
     glFlush();
@@ -1212,6 +1260,7 @@ int main(int argc, char **argv) {
 
     GLUI_Spinner *layers_spinner = new
             GLUI_Spinner(slices_panel, "Number of layers:", &stack_layers, 2, control_cb);
+    layers_spinner->set_float_limits(1,1000);
 
     GLUI_Rotation *view_rot = new GLUI_Rotation(slices_panel, "View rotation", view_rotate);
     view_rot->set_spin(1.0);
