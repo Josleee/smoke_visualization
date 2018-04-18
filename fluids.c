@@ -36,6 +36,7 @@ std::list<fftw_real *> queue_fx;
 std::list<fftw_real *> queue_fy;
 std::list<fftw_real *> queue_rho;
 
+float sax, say, sbx, sby = 0;
 
 //--- SIMULATION PARAMETERS ------------------------------------------------------------------------
 const int DIM = 60;            //size of simulation grid
@@ -869,7 +870,7 @@ void display(void) {
         c_x = winWidth / 2, c_y = winHeight / 2, c_z = 0;
         visualize(fx, fy, vx, vy, rho, 0, 1, 1);
 
-    } else {
+    } else if (slice_switch == 1) {
         eye_x = 1000, eye_y = 1200, eye_z = 1000;
         c_x = 350, c_y = 300, c_z = 0;
 
@@ -885,9 +886,19 @@ void display(void) {
             }
         }
 
+    } else {
+        eye_x = 1000, eye_y = 1200, eye_z = 1000;
+        c_x = 350, c_y = 300, c_z = 0;
+
+        glBegin(GL_LINES);
+        glColor4f(255, 0, 0, 1);
+        glVertex3f(sax, say, 0);
+        glVertex3f(sbx, sby, 0);
+        glEnd();
+
     }
 
-//    glFlush();
+    glFlush();
     glutSwapBuffers();
 
 }
@@ -1037,6 +1048,11 @@ int main(int argc, char **argv) {
     eye_x = winWidth / 2, eye_y = winHeight / 2, eye_z = 400;
     c_x = winWidth / 2, c_y = winHeight / 2, c_z = 0;
 
+    sax = 0;
+    say = winHeight / 2;
+    sbx = winWidth;
+    sby = winHeight / 2;
+
     main_window = glutCreateWindow(WINDOW_TITLE_PREFIX);
 
     /*** Create the side subwindow ***/
@@ -1123,6 +1139,22 @@ int main(int argc, char **argv) {
 
     GLUI_Panel *surface_panel = new
             GLUI_Panel(obj_panel2, "Steam surface settings");
+
+    GLUI_Scrollbar *saxs = new GLUI_Scrollbar(surface_panel, "sax", GLUI_SCROLL_HORIZONTAL,
+                                              &sax);
+    saxs->set_float_limits(0, winWidth);
+
+    GLUI_Scrollbar *says = new GLUI_Scrollbar(surface_panel, "say", GLUI_SCROLL_HORIZONTAL,
+                                              &say);
+    says->set_float_limits(0, winHeight);
+
+    GLUI_Scrollbar *sbxs = new GLUI_Scrollbar(surface_panel, "sbx", GLUI_SCROLL_HORIZONTAL,
+                                              &sbx);
+    sbxs->set_float_limits(0, winWidth);
+
+    GLUI_Scrollbar *sbys = new GLUI_Scrollbar(surface_panel, "sby", GLUI_SCROLL_HORIZONTAL,
+                                              &sby);
+    sbys->set_float_limits(0, winHeight);
 
 
     GLUI_Panel *obj_panel3 = new
