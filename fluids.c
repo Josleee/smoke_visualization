@@ -77,10 +77,10 @@ const int COLOR_BANDS = 3;
 int scalar_col = 1;           //method for scalar coloring
 int frozen = 0;               //toggles on/off the animation
 
-float x_min = 100;
-float x_max = 600;
-float y_min = 100;
-float y_max = 600;
+float x_min = 20;
+float x_max = 770;
+float y_min = 20;
+float y_max = 770;
 int number_points_xdir = 20;
 int number_points_ydir = 20;
 
@@ -579,49 +579,50 @@ void visualize(fftw_real *fx, fftw_real *fy, fftw_real *vx, fftw_real *vy, fftw_
 
     if (draw_vecs == 1) {
         /** normal **/
-////---- define variables for generating arrow head ----//
+        ////---- define variables for generating arrow head ----//
         double theta = PI / 4;
-//        //create a matrix to rotate the velocity vector to get a arrow vector which is pi/4 angular with the velocity
+        //create a matrix to rotate the velocity vector to get a arrow vector which is pi/4 angular with the velocity
         double matrixA[4] = {cos(theta), -sin(theta), sin(theta), cos(theta)};//counter clockwise rotation matrix
         double matrixB[4] = {cos(theta), sin(theta), -sin(theta), cos(theta)};//clockwise rotation matrix
         // get start points x_min, y_min and end points x_max,y_max
 
-        float sample_locations_x [1000];
-        float sample_locations_y [1000];
+        float sample_locations_x[12000];
+        float sample_locations_y[12000];
 
-        float units_distance_x = (x_max - x_min) / (number_points_xdir - 1); // get the distance of cells based on subsample range and number of points
+        float units_distance_x = (x_max - x_min) / (number_points_xdir -
+                                                    1); // get the distance of cells based on subsample range and number of points
         float units_distance_y = (y_max - y_min) / (number_points_ydir - 1);
         // get the cells between the start points and ending point loat
         float sample_current_loca_x = x_min;
         float sample_current_loca_y = y_min;
         //
-        float sample_vx[1000];
-        float sample_vy[1000];
+        float sample_vx[12000];
+        float sample_vy[12000];
 
         sample_locations_x[0] = sample_current_loca_x;
         sample_locations_y[0] = sample_current_loca_y;
 
-        for(i=0; i <= (number_points_ydir * number_points_xdir -1); i = i + number_points_xdir -1){
+        for (i = 0; i <= (number_points_ydir * number_points_xdir - 1); i = i + number_points_xdir - 1) {
             sample_current_loca_x = x_min;
-            for(j = 0; j <  (number_points_xdir - 1) ; j++){
+            for (j = 0; j < (number_points_xdir - 1); j++) {
                 sample_current_loca_x = sample_current_loca_x + units_distance_x;
-                sample_locations_x[i+j+1] = sample_current_loca_x;
+                sample_locations_x[i + j + 1] = sample_current_loca_x;
             }
         }
 
-        for(i=0; i <= (number_points_ydir * number_points_xdir -1); i = i + number_points_xdir -1){
-            for(j = 0; j <  (number_points_xdir - 1) ; j++){
-                sample_locations_y[i+j+1] = sample_current_loca_y;
+        for (i = 0; i <= (number_points_ydir * number_points_xdir - 1); i = i + number_points_xdir - 1) {
+            for (j = 0; j < (number_points_xdir - 1); j++) {
+                sample_locations_y[i + j + 1] = sample_current_loca_y;
             }
             sample_current_loca_y = sample_current_loca_y + units_distance_y;
         }
 
-//// ---------- get the velocity of each sample points with bilinear interpolation---- ////
+        //// ---------- get the velocity of each sample points with bilinear interpolation---- ////
 
-//  for loop to save the velocitY value into array
+        //  for loop to save the velocitY value into array
         glBegin(GL_LINES);
 
-        for(i = 0; i <= (number_points_xdir * number_points_ydir - 1); i++ ) {
+        for (i = 0; i <= (number_points_xdir * number_points_ydir - 1); i++) {
 
             int x_corn1 = (int) floor(sample_locations_x[i] / wn - 1);
             int x_corn2 = (int) ceil(sample_locations_x[i] / wn - 1);
@@ -680,17 +681,17 @@ void visualize(fftw_real *fx, fftw_real *fy, fftw_real *vx, fftw_real *vy, fftw_
             float headvertex1y = (y2) + rotate_head_l1[1];
             float headvertex2x = (x2) + rotate_head_l2[0];
             float headvertex2y = (y2) + rotate_head_l2[1];
-            float magV = sqrt(pow(sample_vx[i],2) + pow(sample_vy[i],2)) * 50;
+            float magV = sqrt(pow(sample_vx[i], 2) + pow(sample_vy[i], 2)) * 50;
 
             set_colormap(magV, alpha);
-            glVertex2f(x1, y1);
-            glVertex2f(x2, y2);
+            glVertex3f(x1, y1, z);
+            glVertex3f(x2, y2, z);
 
-            glVertex2f(x2, y2);
-            glVertex2f(headvertex1x, headvertex1y);
+            glVertex3f(x2, y2, z);
+            glVertex3f(headvertex1x, headvertex1y, z);
 
-            glVertex2f(x2, y2);
-            glVertex2f(headvertex2x, headvertex2y);
+            glVertex3f(x2, y2, z);
+            glVertex3f(headvertex2x, headvertex2y, z);
         }
         glEnd();
 
@@ -1528,8 +1529,38 @@ int main(int argc, char **argv) {
     sl_checkbox->disable();
 
 
-    GLUI_Panel *obj_panel2 = new
-            GLUI_Rollout(glui, "3D visualization", true);
+    GLUI_Panel *pos_panel = new GLUI_Rollout(glui, "Range settings", true);
+
+    GLUI_Panel *range_panel = new GLUI_Panel(pos_panel, "Area for vectors");
+
+    GLUI_Scrollbar *saxsp = new GLUI_Scrollbar(range_panel, "sax", GLUI_SCROLL_HORIZONTAL,
+                                               &x_min);
+    saxsp->set_float_limits(0, winWidth);
+
+    GLUI_Scrollbar *saysp = new GLUI_Scrollbar(range_panel, "say", GLUI_SCROLL_HORIZONTAL,
+                                               &y_min);
+    saysp->set_float_limits(0, winHeight);
+
+    GLUI_Scrollbar *sbxsp = new GLUI_Scrollbar(range_panel, "sbx", GLUI_SCROLL_HORIZONTAL,
+                                               &x_max);
+    sbxsp->set_float_limits(0, winWidth);
+
+    GLUI_Scrollbar *sbysp = new GLUI_Scrollbar(range_panel, "sby", GLUI_SCROLL_HORIZONTAL,
+                                               &y_max);
+    sbysp->set_float_limits(0, winHeight);
+
+    GLUI_Panel *av_panel = new GLUI_Panel(pos_panel, "Area for vectors");
+
+    GLUI_Spinner *x_spinner = new GLUI_Spinner(av_panel, "X axis samples:", &number_points_xdir, 2,
+                                               control_cb);
+    x_spinner->set_int_limits(1, 100);
+
+    GLUI_Spinner *y_spinner = new GLUI_Spinner(av_panel, "X axis samples:", &number_points_ydir, 3,
+                                               control_cb);
+    y_spinner->set_int_limits(1, 100);
+
+
+    GLUI_Panel *obj_panel2 = new GLUI_Rollout(glui, "3D visualization", false);
 
     GLUI_Panel *slices_panel2 = new
             GLUI_Panel(obj_panel2, "View modes");
