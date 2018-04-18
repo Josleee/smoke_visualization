@@ -856,7 +856,7 @@ void visualize(fftw_real *fx, fftw_real *fy, fftw_real *vx, fftw_real *vy, fftw_
 
             float dim = DIM * 2 * (DIM / 2 + 1);
             if (index_corn1 >= dim || index_corn2 >= dim || index_corn3 >= dim || index_corn4 >= dim ||
-                    index_corn1 < 0 || index_corn2 < 0 || index_corn3 < 0 || index_corn4 < 0) {
+                index_corn1 < 0 || index_corn2 < 0 || index_corn3 < 0 || index_corn4 < 0) {
                 limit = i + 1;
                 break;
             }
@@ -918,15 +918,25 @@ void visualize(fftw_real *fx, fftw_real *fy, fftw_real *vx, fftw_real *vy, fftw_
             current_loca_x = current_loca_x * (1 + current_vx * dt);
             current_loca_y = current_loca_y * (1 + current_vy * dt);
 
-            points_x_list[i + 1] = current_loca_x;
-            points_y_list[i + 1] = current_loca_y;
+            if (current_loca_x >= 0 && current_loca_x <= winWidth &&
+                current_loca_y > 0 && current_loca_y <= winHeight) {
+                points_x_list[i + 1] = current_loca_x;
+                points_y_list[i + 1] = current_loca_y;
+            } else {
+                points_x_list[i + 1] = -1;
+                points_y_list[i + 1] = -1;
+            }
         }
 
         glBegin(GL_LINES);
         for (i = 0; i < limit; i++) {
             set_colormap(current_v_mag[i] * 50, alpha2);
-            glVertex3f(points_x_list[i], points_y_list[i], z);
-            glVertex3f(points_x_list[i + 1], points_y_list[i + 1], z);
+            if (points_x_list[i] < 0 || points_y_list[i] < 0 || points_x_list[i + 1] < 0 || points_y_list[i + 1] < 0) {
+                continue;
+            } else {
+                glVertex3f(points_x_list[i], points_y_list[i], z);
+                glVertex3f(points_x_list[i + 1], points_y_list[i + 1], z);
+            }
         }
         glEnd();
 
