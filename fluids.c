@@ -625,7 +625,69 @@ void visualize(fftw_real *fx, fftw_real *fy, fftw_real *vx, fftw_real *vy, fftw_
             }
         glEnd();
 
-    } else if (draw_vecs == 2 || draw_vecs == 3) {
+    } else if (draw_vecs == 2) {
+        // draw_cones
+
+        float magnitude_x;
+        float rotation_angle_list[4000];
+        float rotation_angle;
+        for (i = 0; i < DIM; i += 2) {
+            for (j = 0; j < DIM; j += 2) {
+                idx = (j * DIM) + i;
+                float x1 = wn + (fftw_real) i * wn;
+                float y1 = hn + (fftw_real) j * hn;
+                float x2 = (wn + (fftw_real) i * wn) + vec_scale * vx[idx];
+                float y2 = (hn + (fftw_real) j * hn) + vec_scale * vy[idx];
+
+                if (vx[idx] > 0) {
+                    rotation_angle = atan(vy[idx] / vx[idx]) * 180 / PI;
+                } else if (vx[idx] < 0) {
+                    rotation_angle = atan(vy[idx] / vx[idx]) * 180 / PI + 180;
+                } else {
+                    if (vy[idx] == 0) {
+                        rotation_angle = 0;
+                    } else if (vy[idx] < 0) {
+                        rotation_angle = -90;
+                    } else {
+                        rotation_angle = 90;
+                    }
+                }
+                rotation_angle_list[idx] = rotation_angle;
+                //               printf("angle %f\n", rotation_angle);
+            }
+
+        }
+
+
+        for (i = 0; i < DIM; i += 2) {
+            for (j = 0; j < DIM; j += 2) {
+                idx = (j * DIM) + i;
+                magnitude_x = sqrt(pow(vx[idx], 2) + pow(vy[idx], 2));
+                float radius = magnitude_x * 500;
+                //               printf("mag %f", magnitude_x);
+                set_colormap(magnitude_x * 50, alpha2);
+                //               direction_to_color(vx[idx], vy[idx], color_dir);
+
+                glEnable(GL_LIGHTING);
+                glEnable(GL_LIGHT0);
+                glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, GL_TRUE);
+                glEnable(GL_DEPTH_TEST);
+                glEnable(GL_COLOR_MATERIAL);
+                glPushMatrix();                                    //2.7.  Translate and rotate the canonical cone so as to be centered at the
+                glTranslatef((wn + (fftw_real) i * wn) + vec_scale * vx[idx],
+                             (hn + (fftw_real) j * hn) + vec_scale * vy[idx],
+                             0);                        //      current vertex, and aligned with the current vector
+                glRotatef(90 - rotation_angle_list[idx], 0, 0, -1);
+                glRotatef(-90, 1, 0, 0);
+                //          glRotatef(-90,0,1,0);
+                glutSolidCone(radius / 4, radius, 10, magnitude_x * 500);            //2.8.  Draw the cone
+                glPopMatrix();
+                glDisable(GL_LIGHTING);
+            }
+
+        }
+
+    } else if (draw_vecs == 3 || draw_vecs == 4) {
         /** Gradient **/
 
         double theta = PI / 4;
@@ -811,7 +873,7 @@ void visualize(fftw_real *fx, fftw_real *fy, fftw_real *vx, fftw_real *vy, fftw_
         }
         glEnd();
 
-    } else if (draw_vecs == 4) {
+    } else if (draw_vecs == 5) {
         int T = 100;
         int limit = 100;
 
@@ -1385,6 +1447,8 @@ int main(int argc, char **argv) {
     new
             GLUI_RadioButton(radio3, "Normal");
     new
+            GLUI_RadioButton(radio3, "Normal (cones)");
+    new
             GLUI_RadioButton(radio3, "Gradient of fluid density");
     new
             GLUI_RadioButton(radio3, "Gradient of fluid velocity");
@@ -1429,7 +1493,7 @@ int main(int argc, char **argv) {
 
 
     GLUI_Panel *surface_panel = new
-            GLUI_Panel(obj_panel2, "Steam surface seed line");
+            GLUI_Panel(obj_panel2, "Stream surface seed line");
     GLUI_Scrollbar *saxs = new GLUI_Scrollbar(surface_panel, "sax", GLUI_SCROLL_HORIZONTAL,
                                               &sax);
     saxs->set_float_limits(0, winWidth);
