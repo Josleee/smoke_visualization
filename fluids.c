@@ -27,7 +27,7 @@ GLUI_RadioGroup *radio5;
 GLUI_Spinner *min_spinner, *max_spinner;
 int minimal = 1, maximal = 256;
 
-int stack_layers = 20;
+int stack_layers = 50;
 std::list<fftw_real *> queue_vx;
 std::list<fftw_real *> queue_vy;
 std::list<fftw_real *> queue_fx;
@@ -385,7 +385,7 @@ void storeInQueue() {
 
     queue_fx.push_back(deepCopyFx);
 
-    if (queue_fx.size() > size) {
+    while (queue_fx.size() > size) {
         queue_fx.pop_front();
 //        delete[] tmp;
     }
@@ -396,7 +396,7 @@ void storeInQueue() {
 
     queue_fy.push_back(deepCopyFy);
 
-    if (queue_fy.size() > size) {
+    while (queue_fy.size() > size) {
         queue_fy.pop_front();
     }
 
@@ -406,7 +406,7 @@ void storeInQueue() {
 
     queue_vx.push_back(deepCopyVx);
 
-    if (queue_vx.size() > size) {
+    while (queue_vx.size() > size) {
         queue_vx.pop_front();
     }
 
@@ -416,7 +416,7 @@ void storeInQueue() {
 
     queue_vy.push_back(deepCopyVy);
 
-    if (queue_vy.size() > size) {
+    while (queue_vy.size() > size) {
         queue_vy.pop_front();
     }
 
@@ -426,16 +426,9 @@ void storeInQueue() {
 
     queue_rho.push_back(deepCopyRho);
 
-    if (queue_rho.size() > size) {
+    while (queue_rho.size() > size) {
         queue_rho.pop_front();
     }
-
-//    cout << queue_fx.size() << endl;
-//    for (int i = 0; i < queue_fx.size(); i++) {
-//        for (int j = 0; j < dim; j ++) {
-//            cout << queue_rho.back()[j] << endl;
-//        }
-//    }
 }
 
 //visualize: This is the main visualization function
@@ -870,7 +863,7 @@ void display(void) {
 
     } else {
         eye_x = 1000, eye_y = 1200, eye_z = 1000;
-        c_x = 500, c_y = 450, c_z = 0;
+        c_x = 400, c_y = 450, c_z = 0;
 
         if (queue_rho.size() >= stack_layers) {
             list<fftw_real *>::iterator ifx = queue_fx.begin();
@@ -880,7 +873,7 @@ void display(void) {
             list<fftw_real *>::iterator irho = queue_rho.begin();
 
             for (float ind = 1; irho != queue_rho.end(); ++ifx, ++ify, ++ivx, ++ivy, ++irho, ++ind) {
-                visualize(*ifx, *ify, *ivx, *ivy, *irho, (-400 + ind * (400 / stack_layers)), 1);
+                visualize(*ifx, *ify, *ivx, *ivy, *irho, (-400 + ind * (600 / stack_layers)), 1);
             }
         }
 
@@ -1108,6 +1101,9 @@ int main(int argc, char **argv) {
             GLUI_RadioButton(radio4, "2D");
     new
             GLUI_RadioButton(radio4, "3D");
+
+    GLUI_Spinner *layers_spinner = new
+            GLUI_Spinner(slices_panel, "Number of layers:", &stack_layers, 2, control_cb);
 
     GLUI_Rotation *view_rot = new GLUI_Rotation(slices_panel, "Objects", view_rotate);
     view_rot->set_spin(1.0);
