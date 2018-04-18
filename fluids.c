@@ -12,6 +12,7 @@
 #include <iostream>
 #include <queue>
 #include <list>
+#include <vector>
 
 using namespace std;
 
@@ -868,19 +869,18 @@ void drawStreamSurface(float alpha) {
     float arr_y[DIM] = {};
     float tmp_pre_x1 = -1;
     float tmp_pre_y1 = -1;
+    float pre_rho = 0;
 
     for (int j = 0; j < number_of_seed; ++j) {
         arr_x[j] = (sbx - sax) / (number_of_seed - 1) * j + sax;
         arr_y[j] = (sby - say) / (number_of_seed - 1) * j + say;
     }
 
-    list<fftw_real *>::iterator ifx = queue_fx.begin();
-    list<fftw_real *>::iterator ify = queue_fy.begin();
     list<fftw_real *>::iterator ivx = queue_vx.begin();
     list<fftw_real *>::iterator ivy = queue_vy.begin();
     list<fftw_real *>::iterator irho = queue_rho.begin();
 
-    for (int i = 0; i < stack_layers; ++i, ++ifx, ++ify, ++ivx, ++ivy, ++irho) {
+    for (int i = 0; i < stack_layers; ++i, ++ivx, ++ivy, ++irho) {
         float z0 = -400 + 800 / stack_layers * i;
         float z = -400 + 800 / stack_layers * (i + 1);
         glShadeModel(GL_SMOOTH);
@@ -923,19 +923,18 @@ void drawStreamSurface(float alpha) {
 //                cout << "draw2 " << arr_x[j] << " - " << arr_y[j] << endl;
 //                cout << "draw3 " << arr_x[j - 1] << " - " << arr_y[j - 1] << endl;
 //                cout << z << " z0: " << z0 << endl;
-                set_colormap((*irho)[dimension], alpha);
-//                glColor4f(255, 255, 255, 1);
+                set_colormap(pre_rho, alpha);
                 glVertex3f(tmp_pre_x1, tmp_pre_y1, z0);
-//                set_colormap(rho[idx1], alpha);
+                set_colormap((*irho)[dimension], alpha);
                 glVertex3f(arr_x[j], arr_y[j], z0);
-//                set_colormap(rho[idx2], alpha);
+                set_colormap(pre_rho, alpha);
                 glVertex3f(arr_x[j - 1], arr_y[j - 1], z);
 
-//                set_colormap(rho[idx1], alpha);
+                set_colormap((*irho)[dimension], alpha);
                 glVertex3f(arr_x[j], arr_y[j], z0);
-//                set_colormap(rho[idx2], alpha);
+                set_colormap(pre_rho, alpha);
                 glVertex3f(arr_x[j - 1], arr_y[j - 1], z);
-//                set_colormap(rho[idx0], alpha);
+                set_colormap((*irho)[dimension], alpha);
                 glVertex3f(arr_x[j] + dx, arr_y[j] + dy, z);
             }
 
@@ -950,6 +949,7 @@ void drawStreamSurface(float alpha) {
 
             arr_x[j] = arr_x[j] + dx;
             arr_y[j] = arr_y[j] + dy;
+            pre_rho = (*irho)[dimension];
         }
         glEnd();
     }
@@ -1260,6 +1260,7 @@ int main(int argc, char **argv) {
     new
             GLUI_RadioButton(radio4, "Stream surface");
 
+
     GLUI_Panel *trans_panel = new
             GLUI_Panel(obj_panel2, "Transparency settings");
     GLUI_Scrollbar *sb = new GLUI_Scrollbar(trans_panel, "Alpha", GLUI_SCROLL_HORIZONTAL,
@@ -1270,11 +1271,13 @@ int main(int argc, char **argv) {
                                              &alpha2);
     sb2->set_float_limits(0, 1);
 
+
     GLUI_Panel *surface_seed_panel = new
             GLUI_Panel(obj_panel2, "Number of seeds");
     GLUI_Scrollbar *nos = new GLUI_Scrollbar(surface_seed_panel, "sax", GLUI_SCROLL_HORIZONTAL,
                                               &number_of_seed);
     nos->set_float_limits(10, 60);
+
 
     GLUI_Panel *surface_panel = new
             GLUI_Panel(obj_panel2, "Steam surface seed line");
