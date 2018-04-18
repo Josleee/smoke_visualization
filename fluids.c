@@ -11,6 +11,7 @@
 #include <vector>
 #include <iostream>
 #include <queue>
+#include <list>
 
 using namespace std;
 
@@ -26,12 +27,12 @@ GLUI_RadioGroup *radio5;
 GLUI_Spinner *min_spinner, *max_spinner;
 int minimal = 1, maximal = 256;
 
-int stack_layers = 3;
-std::queue<fftw_real *> queue_vx;
-std::queue<fftw_real *> queue_vy;
-std::queue<fftw_real *> queue_fx;
-std::queue<fftw_real *> queue_fy;
-std::queue<fftw_real *> queue_rho;
+int stack_layers = 20;
+std::list<fftw_real *> queue_vx;
+std::list<fftw_real *> queue_vy;
+std::list<fftw_real *> queue_fx;
+std::list<fftw_real *> queue_fy;
+std::list<fftw_real *> queue_rho;
 
 
 //--- SIMULATION PARAMETERS ------------------------------------------------------------------------
@@ -382,10 +383,10 @@ void storeInQueue() {
     for (size_t i = 0; i < dim; ++i)
         deepCopyFx[i] = fx[i];
 
-    queue_fx.push(deepCopyFx);
+    queue_fx.push_back(deepCopyFx);
 
     if (queue_fx.size() > size) {
-        queue_fx.pop();
+        queue_fx.pop_front();
 //        delete[] tmp;
     }
 
@@ -393,40 +394,40 @@ void storeInQueue() {
     for (size_t i = 0; i < dim; ++i)
         deepCopyFy[i] = fy[i];
 
-    queue_fy.push(deepCopyFy);
+    queue_fy.push_back(deepCopyFy);
 
     if (queue_fy.size() > size) {
-        queue_fy.pop();
+        queue_fy.pop_front();
     }
 
     fftw_real *deepCopyVx = new fftw_real[dim];
     for (size_t i = 0; i < dim; ++i)
         deepCopyVx[i] = vx[i];
 
-    queue_vx.push(deepCopyVx);
+    queue_vx.push_back(deepCopyVx);
 
     if (queue_vx.size() > size) {
-        queue_vx.pop();
+        queue_vx.pop_front();
     }
 
     fftw_real *deepCopyVy = new fftw_real[dim];
     for (size_t i = 0; i < dim; ++i)
         deepCopyVy[i] = vy[i];
 
-    queue_vy.push(deepCopyVy);
+    queue_vy.push_back(deepCopyVy);
 
     if (queue_vy.size() > size) {
-        queue_vy.pop();
+        queue_vy.pop_front();
     }
 
     fftw_real *deepCopyRho = new fftw_real[dim];
     for (size_t i = 0; i < dim; ++i)
         deepCopyRho[i] = rho[i];
 
-    queue_rho.push(deepCopyRho);
+    queue_rho.push_back(deepCopyRho);
 
     if (queue_rho.size() > size) {
-        queue_rho.pop();
+        queue_rho.pop_front();
     }
 
 //    cout << queue_fx.size() << endl;
@@ -872,40 +873,15 @@ void display(void) {
         c_x = 500, c_y = 450, c_z = 0;
 
         if (queue_rho.size() >= stack_layers) {
-            queue<fftw_real *> tmp_queue_vx;
-            queue<fftw_real *> tmp_queue_vy;
-            queue<fftw_real *> tmp_queue_fx;
-            queue<fftw_real *> tmp_queue_fy;
-            queue<fftw_real *> tmp_queue_rho;
+            list<fftw_real *>::iterator ifx = queue_fx.begin();
+            list<fftw_real *>::iterator ify = queue_fy.begin();
+            list<fftw_real *>::iterator ivx = queue_vx.begin();
+            list<fftw_real *>::iterator ivy = queue_vy.begin();
+            list<fftw_real *>::iterator irho = queue_rho.begin();
 
-            for (int i = 0; i < stack_layers; i++) {
-//            fftw_real *tmp_rho = queue_rho.front();
-//            tmp_queue_rho.push(tmp);
-//            queue_rho.pop();
-//
-//            fftw_real *tmp_rho = queue_rho.front();
-//            tmp_queue_rho.push(tmp);
-//            queue_rho.pop();
-//
-//            fftw_real *tmp_rho = queue_rho.front();
-//            tmp_queue_rho.push(tmp);
-//            queue_rho.pop();
-//
-//            fftw_real *tmp_rho = queue_rho.front();
-//            tmp_queue_rho.push(tmp);
-//            queue_rho.pop();
-
-                fftw_real *tmp_rho = queue_rho.front();
-                tmp_queue_rho.push(tmp_rho);
-                visualize(vx, vy, vx, vy, tmp_rho, -i * 80, 1);
-                queue_rho.pop();
+            for (float ind = 1; irho != queue_rho.end(); ++ifx, ++ify, ++ivx, ++ivy, ++irho, ++ind) {
+                visualize(*ifx, *ify, *ivx, *ivy, *irho, (-400 + ind * (400 / stack_layers)), 1);
             }
-
-            for (int i = 0; i < tmp_queue_rho.size(); i++) {
-                queue_rho.push(tmp_queue_rho.front());
-                tmp_queue_rho.pop();
-            }
-
         }
 
 
