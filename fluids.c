@@ -53,7 +53,7 @@ rfftwnd_plan plan_rc, plan_cr;  //simulation domain discretization
 float view_rotate[16] = {1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1};
 int winWidth, winHeight;      //size of the graphics window, in pixels
 int color_dir = 1;            //use direction color-coding or not
-int slice_switch = 1;
+int slice_switch = 2;
 float vec_scale = 1000;            //scaling of hedgehogs
 int draw_smoke = 1;           //draw the smoke or not
 float clamp_range = 1;
@@ -828,6 +828,51 @@ void visualize(fftw_real *fx, fftw_real *fy, fftw_real *vx, fftw_real *vy, fftw_
     drawLegends();
 }
 
+void drawCubeContour() {
+    glBegin(GL_LINES);
+
+    float z_inner = -400;
+    float z_outer = 400;
+
+    glColor4f(255, 255, 255, 0.5);
+    glVertex3f(0, 0, z_inner);
+    glVertex3f(0, winHeight, z_inner);
+
+    glVertex3f(0, 0, z_inner);
+    glVertex3f(winWidth, 0, z_inner);
+
+    glVertex3f(winWidth, 0, z_inner);
+    glVertex3f(winWidth, winHeight, z_inner);
+
+    glVertex3f(0, winHeight, z_inner);
+    glVertex3f(winWidth, winHeight, z_inner);
+
+    glVertex3f(0, 0, z_outer);
+    glVertex3f(0, winHeight, z_outer);
+
+    glVertex3f(0, 0, z_outer);
+    glVertex3f(winWidth, 0, z_outer);
+
+    glVertex3f(winWidth, 0, z_outer);
+    glVertex3f(winWidth, winHeight, z_outer);
+
+    glVertex3f(0, winHeight, z_outer);
+    glVertex3f(winWidth, winHeight, z_outer);
+
+    glVertex3f(0, 0, z_inner);
+    glVertex3f(0, 0, z_outer);
+
+    glVertex3f(winWidth, 0, z_inner);
+    glVertex3f(winWidth, 0, z_outer);
+
+    glVertex3f(0, winHeight, z_inner);
+    glVertex3f(0, winHeight, z_outer);
+
+    glVertex3f(winWidth, winHeight, z_inner);
+    glVertex3f(winWidth, winHeight, z_outer);
+    glEnd();
+}
+
 
 //------ INTERACTION CODE STARTS HERE -----------------------------------------------------------------
 float eye_x = 0, eye_y = 0, eye_z = 400;
@@ -848,9 +893,9 @@ void display(void) {
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
     if (slice_switch == 0) {
-        gluPerspective(90, (w - panel_length) / h, 1.0f, 2000.0f);
+        gluPerspective(90, (w - panel_length) / h, 1.0f, 3000.0f);
     } else {
-        gluPerspective(60, (w - panel_length) / h, 1.0f, 2000.0f);
+        gluPerspective(60, (w - panel_length) / h, 1.0f, 3000.0f);
     }
 //    gluOrtho2D(0.0, (GLdouble) w - panel_length, 0.0, (GLdouble) h);
 
@@ -890,10 +935,12 @@ void display(void) {
         eye_x = 1000, eye_y = 1200, eye_z = 1000;
         c_x = 350, c_y = 300, c_z = 0;
 
+        drawCubeContour();
+
         glBegin(GL_LINES);
         glColor4f(255, 0, 0, 1);
-        glVertex3f(sax, say, 0);
-        glVertex3f(sbx, sby, 0);
+        glVertex3f(sax, say, 400);
+        glVertex3f(sbx, sby, 400);
         glEnd();
 
     }
