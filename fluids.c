@@ -28,6 +28,8 @@ GLUI_Spinner *min_spinner, *max_spinner;
 int minimal = 1, maximal = 256;
 
 int stack_layers = 50;
+float alpha = 0.5;
+float alpha2 = 0.5;
 std::list<fftw_real *> queue_vx;
 std::list<fftw_real *> queue_vy;
 std::list<fftw_real *> queue_fx;
@@ -55,7 +57,7 @@ float vec_scale = 1000;            //scaling of hedgehogs
 int draw_smoke = 1;           //draw the smoke or not
 float clamp_range = 1;
 int draw_vecs = 0;              //draw the vector field or not
-int color_map_dataset = 1;
+int color_map_dataset = 2;
 const int color_rho = 2;//use density datasets
 const int color_v = 3;//use fluid velocity magnitude datasets
 const int color_f = 1;//use force field magnitude datasets
@@ -263,7 +265,7 @@ float scaleVelocity(float v, float min, float max) {
 }
 
 //set_colormap: Sets three different types of colormaps
-void set_colormap(float vy) {
+void set_colormap(float vy, float alpha) {
     float R, G, B;
 //    printf("%d\n", scalar_col);
 
@@ -294,14 +296,14 @@ void set_colormap(float vy) {
 //        printf("after %f\n", vy);
         rainbow(vy, &R, &G, &B);
     }
-    glColor3f(R, G, B);
+    glColor4f(R, G, B, alpha);
 }
 
 
 //direction_to_color: Set the current color by mapping a direction vector (x,y), using
 //                    the color mapping method 'method'. If method==1, map the vector direction
 //                    using a rainbow colormap. If method==0, simply use the white color
-void direction_to_color(float x, float y, int method) {
+void direction_to_color(float x, float y, int method, float alpha) {
     float r, g, b, f;
     if (method) {
         f = atan2(y, x) / 3.1415927 + 1;
@@ -314,7 +316,7 @@ void direction_to_color(float x, float y, int method) {
         if (b > 2) b -= 2;
         if (b > 1) b = 2 - b;
     } else { r = g = b = 1; }
-    glColor3f(r, g, b);
+    glColor4f(r, g, b, alpha);
 }
 
 void drawLegends() {
@@ -340,7 +342,7 @@ void drawLegends() {
             }
         }
 
-        set_colormap(vy);
+        set_colormap(vy, 1);
 //        glVertex2f(pLeft, (0.5 * i) + pTop); //(x,y top left)
 //        glVertex2f(pRight, (0.5 * i) + pTop); //(x,y bottom left)
 //        glVertex2f(pLeft, (0.5 * (i + 1)) + pTop); //(x,y bottom right)
@@ -432,7 +434,8 @@ void storeInQueue() {
 }
 
 //visualize: This is the main visualization function
-void visualize(fftw_real *fx, fftw_real *fy, fftw_real *vx, fftw_real *vy, fftw_real *rho, float z, float alpha) {
+void visualize(fftw_real *fx, fftw_real *fy, fftw_real *vx, fftw_real *vy, fftw_real *rho, float z, float alpha,
+               float alpha2) {
     int i, j, idx, idx0, idx1, idx2, idx3;
     double px0, py0, px1, py1, px2, py2, px3, py3;
     fftw_real wn = (fftw_real) winWidth / (fftw_real) (DIM + 1);   // Grid cell width
@@ -471,18 +474,18 @@ void visualize(fftw_real *fx, fftw_real *fy, fftw_real *vx, fftw_real *vy, fftw_
                     float f_mag3 = (sqrt(pow(fx[idx3], 2) + pow(fy[idx3], 2))) * 50;
 
 
-                    set_colormap(f_mag0);
+                    set_colormap(f_mag0, alpha);
                     glVertex3f(px0, py0, z);
-                    set_colormap(f_mag1);
+                    set_colormap(f_mag1, alpha);
                     glVertex3f(px1, py1, z);
-                    set_colormap(f_mag2);
+                    set_colormap(f_mag2, alpha);
                     glVertex3f(px2, py2, z);
 
-                    set_colormap(f_mag0);
+                    set_colormap(f_mag0, alpha);
                     glVertex3f(px0, py0, z);
-                    set_colormap(f_mag2);
+                    set_colormap(f_mag2, alpha);
                     glVertex3f(px2, py2, z);
-                    set_colormap(f_mag3);
+                    set_colormap(f_mag3, alpha);
                     glVertex3f(px3, py3, z);
                 }
             }
@@ -511,18 +514,18 @@ void visualize(fftw_real *fx, fftw_real *fy, fftw_real *vx, fftw_real *vy, fftw_
                     py3 = hn + (fftw_real) j * hn;
                     idx3 = (j * DIM) + (i + 1);
 
-                    set_colormap(rho[idx0]);
+                    set_colormap(rho[idx0], alpha);
                     glVertex3f(px0, py0, z);
-                    set_colormap(rho[idx1]);
+                    set_colormap(rho[idx1], alpha);
                     glVertex3f(px1, py1, z);
-                    set_colormap(rho[idx2]);
+                    set_colormap(rho[idx2], alpha);
                     glVertex3f(px2, py2, z);
 
-                    set_colormap(rho[idx0]);
+                    set_colormap(rho[idx0], alpha);
                     glVertex3f(px0, py0, z);
-                    set_colormap(rho[idx2]);
+                    set_colormap(rho[idx2], alpha);
                     glVertex3f(px2, py2, z);
-                    set_colormap(rho[idx3]);
+                    set_colormap(rho[idx3], alpha);
                     glVertex3f(px3, py3, z);
                 }
             }
@@ -557,18 +560,18 @@ void visualize(fftw_real *fx, fftw_real *fy, fftw_real *vx, fftw_real *vy, fftw_
                     fftw_real v_mag2 = (sqrt(pow(vx[idx2], 2) + pow(vy[idx2], 2))) * 25;
                     fftw_real v_mag3 = (sqrt(pow(vx[idx3], 2) + pow(vy[idx3], 2))) * 25;
 
-                    set_colormap(v_mag0);
+                    set_colormap(v_mag0, alpha);
                     glVertex3f(px0, py0, z);
-                    set_colormap(v_mag1);
+                    set_colormap(v_mag1, alpha);
                     glVertex3f(px1, py1, z);
-                    set_colormap(v_mag2);
+                    set_colormap(v_mag2, alpha);
                     glVertex3f(px2, py2, z);
 
-                    set_colormap(v_mag0);
+                    set_colormap(v_mag0, alpha);
                     glVertex3f(px0, py0, z);
-                    set_colormap(v_mag2);
+                    set_colormap(v_mag2, alpha);
                     glVertex3f(px2, py2, z);
-                    set_colormap(v_mag3);
+                    set_colormap(v_mag3, alpha);
                     glVertex3f(px3, py3, z);
                 }
             }
@@ -593,7 +596,7 @@ void visualize(fftw_real *fx, fftw_real *fy, fftw_real *vx, fftw_real *vy, fftw_
         for (i = 0; i < DIM; i += 2)
             for (j = 0; j < DIM; j += 2) {
                 idx = (j * DIM) + i;
-                direction_to_color(vx[idx], vy[idx], color_dir);
+                direction_to_color(vx[idx], vy[idx], color_dir, alpha);
 
                 float x1 = wn + (fftw_real) i * wn;
                 float y1 = hn + (fftw_real) j * hn;
@@ -617,7 +620,7 @@ void visualize(fftw_real *fx, fftw_real *fy, fftw_real *vx, fftw_real *vy, fftw_
                 float headvertex2x = (x2) + rotate_head_l2[0];
                 float headvertex2y = (y2) + rotate_head_l2[1];
 
-
+//                set_colormap(rho[idx0], alpha2);
                 glVertex3f(wn + (fftw_real) i * wn, hn + (fftw_real) j * hn, z);
                 glVertex3f((wn + (fftw_real) i * wn) + vec_scale * vx[idx],
                            (hn + (fftw_real) j * hn) + vec_scale * vy[idx], z);
@@ -689,10 +692,10 @@ void visualize(fftw_real *fx, fftw_real *fy, fftw_real *vx, fftw_real *vy, fftw_
                 fftw_real pxm = (px0 + px1 + px2 + px3) / 4;
                 fftw_real pym = (py0 + py1 + py2 + py3) / 4;
 
-                set_colormap(rho[idx0]);
+                set_colormap(rho[idx0], alpha2);
                 glVertex3f(pxm, pym, z);
 
-                set_colormap(rho[idx1]);
+                set_colormap(rho[idx1], alpha2);
                 glVertex3f(pxm + d_x, pym + d_y, z);
 
                 fftw_real pxn = pxm + d_x;
@@ -786,10 +789,10 @@ void visualize(fftw_real *fx, fftw_real *fy, fftw_real *vx, fftw_real *vy, fftw_
                 fftw_real pxm = (px0 + px1 + px2 + px3) / 4;
                 fftw_real pym = (py0 + py1 + py2 + py3) / 4;
 
-                set_colormap(rho[idx0]);
+                set_colormap(rho[idx0], alpha2);
                 glVertex3f(pxm, pym, z);
 
-                set_colormap(rho[idx1]);
+                set_colormap(rho[idx1], alpha2);
                 glVertex3f(pxm + d_x, pym + d_y, z);
 
                 fftw_real pxn = pxm + d_x;
@@ -858,8 +861,13 @@ void display(void) {
     gluLookAt(eye_x, eye_y, eye_z, c_x, c_y, c_z, up_x, up_y, up_z);
 //    glRotatef(t, 0, 1, 1);
 
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
     if (slice_switch == 0) {
-        visualize(fx, fy, vx, vy, rho, 0, 1);
+        eye_x = winWidth / 2, eye_y = winHeight / 2, eye_z = 400;
+        c_x = winWidth / 2, c_y = winHeight / 2, c_z = 0;
+        visualize(fx, fy, vx, vy, rho, 0, 1, 1);
 
     } else {
         eye_x = 1000, eye_y = 1200, eye_z = 1000;
@@ -873,10 +881,9 @@ void display(void) {
             list<fftw_real *>::iterator irho = queue_rho.begin();
 
             for (float ind = 1; irho != queue_rho.end(); ++ifx, ++ify, ++ivx, ++ivy, ++irho, ++ind) {
-                visualize(*ifx, *ify, *ivx, *ivy, *irho, (-400 + ind * (600 / stack_layers)), 1);
+                visualize(*ifx, *ify, *ivx, *ivy, *irho, (-400 + ind * (600 / stack_layers)), alpha, alpha2);
             }
         }
-
 
     }
 
@@ -1035,7 +1042,7 @@ int main(int argc, char **argv) {
     /*** Create the side subwindow ***/
     GLUI *glui = GLUI_Master.create_glui_subwindow(main_window, GLUI_SUBWINDOW_RIGHT);
     GLUI_Panel *obj_panel = new
-            GLUI_Rollout(glui, "Step 2", true);
+            GLUI_Rollout(glui, "2D settings", true);
 
     /***** Control for colormap *****/
     GLUI_Panel *type_panel = new
@@ -1091,7 +1098,7 @@ int main(int argc, char **argv) {
             GLUI_RadioButton(radio3, "Gradient of fluid velocity");
 
     GLUI_Panel *obj_panel2 = new
-            GLUI_Rollout(glui, "3D", true);
+            GLUI_Rollout(glui, "Slice settings", true);
 
     GLUI_Panel *slices_panel = new
             GLUI_Panel(obj_panel2, "Slices");
@@ -1107,6 +1114,14 @@ int main(int argc, char **argv) {
 
     GLUI_Rotation *view_rot = new GLUI_Rotation(slices_panel, "Objects", view_rotate);
     view_rot->set_spin(1.0);
+
+    GLUI_Scrollbar *sb = new GLUI_Scrollbar(slices_panel, "Alpha", GLUI_SCROLL_HORIZONTAL,
+                                            &alpha);
+    sb->set_float_limits(0, 1);
+
+    GLUI_Scrollbar *sb2 = new GLUI_Scrollbar(slices_panel, "Alpha2", GLUI_SCROLL_HORIZONTAL,
+                                             &alpha2);
+    sb2->set_float_limits(0, 1);
 
     GLUI_Spinner *min_spinner2 = new
             GLUI_Spinner(slices_panel, "Eye position x:", &eye_x, 2, control_cb);
