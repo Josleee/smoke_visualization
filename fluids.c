@@ -27,7 +27,7 @@ GLUI_RadioGroup *radio4;
 GLUI_RadioGroup *radio5;
 GLUI_Checkbox *sl_checkbox;
 GLUI_Spinner *min_spinner, *max_spinner;
-int minimal = 1, maximal = 256;
+int minimal = 1, maximal = 255;
 int enable_mice = 0;
 
 int stack_layers = 60;
@@ -861,6 +861,14 @@ void visualize(fftw_real *fx, fftw_real *fy, fftw_real *vx, fftw_real *vy, fftw_
             int index_corn2 = y_index_corn2 * DIM + x_index_corn2;
             int index_corn3 = y_index_corn3 * DIM + x_index_corn3;
             int index_corn4 = y_index_corn4 * DIM + x_index_corn4;
+
+            float dim = DIM * 2 * (DIM / 2 + 1);
+            if (index_corn1 >= dim || index_corn2 >= dim || index_corn3 >= dim || index_corn4 >= dim ||
+                    index_corn1 < 0 || index_corn2 < 0 || index_corn3 < 0 || index_corn4 < 0) {
+                limit = i + 1;
+                break;
+            }
+
             //compute the velocity of x,y directions
             v_x_corn1 = vx[index_corn1];
             v_x_corn2 = vx[index_corn2];
@@ -1320,7 +1328,7 @@ int main(int argc, char **argv) {
     /*** Create the side subwindow ***/
     GLUI *glui = GLUI_Master.create_glui_subwindow(main_window, GLUI_SUBWINDOW_RIGHT);
     GLUI_Panel *obj_panel = new
-            GLUI_Rollout(glui, "2D settings", true);
+            GLUI_Rollout(glui, "2D visualization", true);
 
     /***** Control for colormap *****/
     GLUI_Panel *type_panel = new
@@ -1338,13 +1346,13 @@ int main(int argc, char **argv) {
 
     min_spinner = new
             GLUI_Spinner(type_panel, "Min:", &minimal, 2, control_cb);
-    min_spinner->set_int_limits(2, 256);
+    min_spinner->set_int_limits(1, 255);
 //    min_spinner->set_alignment(GLUI_ALIGN_LEFT);
     min_spinner->disable();
 
     max_spinner = new
             GLUI_Spinner(type_panel, "Max:", &maximal, 3, control_cb);
-    max_spinner->set_int_limits(2, 256);
+    max_spinner->set_int_limits(1, 255);
 //    max_spinner->set_alignment(GLUI_ALIGN_LEFT);
     max_spinner->disable();
 
