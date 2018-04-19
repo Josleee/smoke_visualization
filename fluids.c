@@ -670,8 +670,8 @@ void visualize(fftw_real *fx, fftw_real *fy, fftw_real *vx, fftw_real *vy, fftw_
             //creating arrows
             float x1 = sample_locations_x[i];
             float y1 = sample_locations_y[i];
-            float x2 = sample_locations_x[i] + vec_scale * sample_vx[i];
-            float y2 = sample_locations_y[i] + vec_scale * sample_vy[i];
+            float x2 = sample_locations_x[i] + (units_distance_x + units_distance_y) / 100 * vec_scale * sample_vx[i];
+            float y2 = sample_locations_y[i] + (units_distance_x + units_distance_y) / 100 * vec_scale * sample_vy[i];
             float arrow[2] = {x1 - x2, y1 - y2};
             float rotate_head_l1_x = arrow[0] * matrixA[0] + arrow[1] * matrixA[1];
             float rotate_head_l1_y = arrow[0] * matrixA[2] + arrow[1] * matrixA[3];
