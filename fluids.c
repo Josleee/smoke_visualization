@@ -577,7 +577,8 @@ void visualize(fftw_real *fx, fftw_real *fy, fftw_real *vx, fftw_real *vy, fftw_
     }
 
     if (draw_vecs == 1) {
-        /** normal **/
+        /** Velocity by arrows **/
+
         ////---- define variables for generating arrow head ----//
         double theta = PI / 4;
         //create a matrix to rotate the velocity vector to get a arrow vector which is pi/4 angular with the velocity
@@ -696,7 +697,7 @@ void visualize(fftw_real *fx, fftw_real *fy, fftw_real *vx, fftw_real *vy, fftw_
         glEnd();
 
     } else if (draw_vecs == 2) {
-        // draw_cones
+        /** Velocity by draw cones **/
 
         float magnitude_x;
         float rotation_angle_list[4000];
@@ -755,7 +756,7 @@ void visualize(fftw_real *fx, fftw_real *fy, fftw_real *vx, fftw_real *vy, fftw_
         }
 
     } else if (draw_vecs == 3) {
-        // draw balls
+        /** Velocity by draw balls **/
 
         float magnitude_x;
         float rotation_angle_list[4000];
@@ -787,7 +788,6 @@ void visualize(fftw_real *fx, fftw_real *fy, fftw_real *vx, fftw_real *vy, fftw_
 
         }
 
-
         for (i = 0; i < DIM; i += 2) {
             for (j = 0; j < DIM; j += 2) {
                 idx = (j * DIM) + i;
@@ -808,11 +808,11 @@ void visualize(fftw_real *fx, fftw_real *fy, fftw_real *vx, fftw_real *vy, fftw_
                 glPopMatrix();
                 glDisable(GL_LIGHTING);
             }
-
         }
-    } else if (draw_vecs == 4) {
 
-        /** normal using force data **/
+    } else if (draw_vecs == 4) {
+        /** Force data **/
+
         ////---- define variables for generating arrow head ----//
         double theta = PI / 4;
         //create a matrix to rotate the velocity vector to get a arrow vector which is pi/4 angular with the velocity
@@ -919,7 +919,7 @@ void visualize(fftw_real *fx, fftw_real *fy, fftw_real *vx, fftw_real *vy, fftw_
             float headvertex2y = (y2) + rotate_head_l2[1];
             float magV = sqrt(pow(sample_fx[i], 2) + pow(sample_fy[i], 2)) * 20;
 
-            set_colormap(magV, alpha);
+            set_colormap(magV, alpha2);
             glVertex3f(x1, y1, z);
             glVertex3f(x2, y2, z);
 
@@ -1118,7 +1118,8 @@ void visualize(fftw_real *fx, fftw_real *fy, fftw_real *vx, fftw_real *vy, fftw_
         glEnd();
 
     } else if (draw_vecs == 7) {
-        //draw streamlines
+        /** Stream line **/
+
         int T = 100;
         int limit = 100;
 
@@ -1247,13 +1248,11 @@ void visualize(fftw_real *fx, fftw_real *fy, fftw_real *vx, fftw_real *vy, fftw_
             }
         }
         glEnd();
-
-
     }
 
     drawLegends();
-
 }
+
 
 void drawCubeContour() {
     glBegin(GL_LINES);
@@ -1471,8 +1470,8 @@ void display(void) {
 
     glFlush();
     glutSwapBuffers();
-
 }
+
 
 //reshape: Handle window resizing (reshaping) events
 void reshape(int w, int h) {
@@ -1481,6 +1480,7 @@ void reshape(int w, int h) {
 //    glLoadIdentity();
 //    gluOrtho2D(0.0, (GLdouble) w - panel_length, 0.0, (GLdouble) h);
 }
+
 
 //keyboard: Handle key presses
 void keyboard(unsigned char key, int x, int y) {
@@ -1577,6 +1577,7 @@ void control_cb(int control) {
 //    printf( "                 text: %s\n", edittext->get_text().c_str() );
 }
 
+
 void control_radio(int control) {
     int val = radio->get_int_val();
     scalar_col = val;
@@ -1596,6 +1597,7 @@ void control_radio(int control) {
     }
 }
 
+
 void control_mice(int control) {
     if (radio3->get_int_val() == 5) {
         sl_checkbox->enable();
@@ -1603,6 +1605,7 @@ void control_mice(int control) {
         sl_checkbox->disable();
     }
 }
+
 
 //main: The main program
 int main(int argc, char **argv) {
@@ -1843,4 +1846,3 @@ int main(int argc, char **argv) {
     glutMainLoop();
     return 0;
 }
-
