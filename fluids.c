@@ -81,8 +81,8 @@ float x_min = 20;
 float x_max = 770;
 float y_min = 20;
 float y_max = 770;
-int number_points_xdir = 20;
-int number_points_ydir = 20;
+int number_points_xdir = 3;
+int number_points_ydir = 3;
 
 
 
@@ -586,44 +586,39 @@ void visualize(fftw_real *fx, fftw_real *fy, fftw_real *vx, fftw_real *vy, fftw_
         double matrixB[4] = {cos(theta), sin(theta), -sin(theta), cos(theta)};//clockwise rotation matrix
         // get start points x_min, y_min and end points x_max,y_max
 
-        float sample_locations_x[12000];
-        float sample_locations_y[12000];
+        float sample_locations_x[30000];
+        float sample_locations_y[30000];
 
-        float units_distance_x = (x_max - x_min) / (number_points_xdir -
-                                                    1); // get the distance of cells based on subsample range and number of points
+        // get the distance of cells based on subsample range and number of points
+        float units_distance_x = (x_max - x_min) / (number_points_xdir - 1);
         float units_distance_y = (y_max - y_min) / (number_points_ydir - 1);
         // get the cells between the start points and ending point loat
         float sample_current_loca_x = x_min;
         float sample_current_loca_y = y_min;
         //
-        float sample_vx[12000];
-        float sample_vy[12000];
+        float sample_vx[30000];
+        float sample_vy[30000];
 
-        sample_locations_x[0] = sample_current_loca_x;
-        sample_locations_y[0] = sample_current_loca_y;
+//        sample_locations_x[0] = sample_current_loca_x;
+//        sample_locations_y[0] = sample_current_loca_y;
 
-
-        for (i = 0; i <= (number_points_ydir * number_points_xdir - 1); i += number_points_xdir) {
+        for (i = 0; i < number_points_ydir * number_points_xdir; i += number_points_xdir) {
             sample_current_loca_x = x_min;
-            for (j = 0; j <= (number_points_xdir - 1); j++) {
+
+            for (j = 0; j < number_points_xdir; j++) {
                 sample_locations_x[i + j] = sample_current_loca_x;
+                sample_locations_y[i + j] = sample_current_loca_y;
                 sample_current_loca_x = sample_current_loca_x + units_distance_x;
             }
-        }
 
-        for (i = 0; i <= (number_points_ydir * number_points_xdir - 1); i += number_points_ydir) {
-            for (j = 0; j <= (number_points_xdir); j++) {
-                sample_locations_y[i + j] = sample_current_loca_y;
-            }
             sample_current_loca_y = sample_current_loca_y + units_distance_y;
         }
 
         //// ---------- get the velocity of each sample points with bilinear interpolation---- ////
-
         //  for loop to save the velocitY value into array
         glBegin(GL_LINES);
 
-        for (i = 0; i <= (number_points_xdir * number_points_ydir - 1); i++) {
+        for (i = 0; i < number_points_xdir * number_points_ydir; i++) {
 
             int x_corn1 = (int) floor(sample_locations_x[i] / wn - 1);
             int x_corn2 = (int) ceil(sample_locations_x[i] / wn - 1);
@@ -666,6 +661,12 @@ void visualize(fftw_real *fx, fftw_real *fy, fftw_real *vx, fftw_real *vy, fftw_
                             samplev_y_corn2 * sample_d2corn2x * sample_d2corn1y +
                             samplev_y_corn3 * sample_d2corn1x * sample_d2corn3y +
                             samplev_y_corn4 * sample_d2corn2x * sample_d2corn3y) / (hn * wn);
+
+//            for (int k = 0; k < 100; ++k) {
+//                cout << k << endl;
+//                cout << "x: " << sample_locations_x[k] << " y:" << sample_locations_y[k] << endl;
+//            }
+
             //creating arrows
             float x1 = sample_locations_x[i];
             float y1 = sample_locations_y[i];
@@ -1738,11 +1739,11 @@ int main(int argc, char **argv) {
 
     GLUI_Spinner *x_spinner = new GLUI_Spinner(av_panel, "X axis samples:", &number_points_xdir, 2,
                                                control_cb);
-    x_spinner->set_int_limits(1, 100);
+    x_spinner->set_int_limits(5, 150);
 
     GLUI_Spinner *y_spinner = new GLUI_Spinner(av_panel, "X axis samples:", &number_points_ydir, 3,
                                                control_cb);
-    y_spinner->set_int_limits(1, 100);
+    y_spinner->set_int_limits(5, 150);
 
 
     GLUI_Panel *obj_panel2 = new GLUI_Rollout(glui, "3D visualization", false);
