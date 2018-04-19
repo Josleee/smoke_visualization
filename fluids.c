@@ -386,6 +386,11 @@ void drawLegends() {
     glVertex3f(pLeft, 500 + pTop, 0); //(x,y bottom right)
     glVertex3f(pRight, pTop, 0); //(x,y bottom left)
     glVertex3f(pRight, 500 + pTop, 0); //(x,y bottom left)
+
+//    glColor3f(255, 255, 255);
+//    glRasterPos3f(300, 300, 0);
+//    glutBitmapCharacter(GLUT_BITMAP_TIMES_ROMAN_24, "TEst");
+
     glEnd();
 }
 
@@ -1612,7 +1617,7 @@ void control_radio(int control) {
 
 
 void control_mice(int control) {
-    if (radio3->get_int_val() == 5) {
+    if (radio3->get_int_val() == 7) {
         sl_checkbox->enable();
     } else {
         sl_checkbox->disable();
