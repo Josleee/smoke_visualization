@@ -576,7 +576,6 @@ void visualize(fftw_real *fx, fftw_real *fy, fftw_real *vx, fftw_real *vy, fftw_
 
     }
 
-
     if (draw_vecs == 1) {
         /** normal **/
         ////---- define variables for generating arrow head ----//
@@ -589,8 +588,7 @@ void visualize(fftw_real *fx, fftw_real *fy, fftw_real *vx, fftw_real *vy, fftw_
         float sample_locations_x[12000];
         float sample_locations_y[12000];
 
-        float units_distance_x = (x_max - x_min) / (number_points_xdir -
-                                                    1); // get the distance of cells based on subsample range and number of points
+        float units_distance_x = (x_max - x_min) / (number_points_xdir - 1); // get the distance of cells based on subsample range and number of points
         float units_distance_y = (y_max - y_min) / (number_points_ydir - 1);
         // get the cells between the start points and ending point loat
         float sample_current_loca_x = x_min;
@@ -602,17 +600,19 @@ void visualize(fftw_real *fx, fftw_real *fy, fftw_real *vx, fftw_real *vy, fftw_
         sample_locations_x[0] = sample_current_loca_x;
         sample_locations_y[0] = sample_current_loca_y;
 
-        for (i = 0; i <= (number_points_ydir * number_points_xdir - 1); i = i + number_points_xdir - 1) {
+
+
+        for (i = 0; i <= (number_points_ydir * number_points_xdir - 1); i += number_points_xdir) {
             sample_current_loca_x = x_min;
-            for (j = 0; j < (number_points_xdir - 1); j++) {
+            for (j = 0; j <= (number_points_xdir - 1); j++) {
+                sample_locations_x[i + j ] = sample_current_loca_x;
                 sample_current_loca_x = sample_current_loca_x + units_distance_x;
-                sample_locations_x[i + j + 1] = sample_current_loca_x;
             }
         }
 
-        for (i = 0; i <= (number_points_ydir * number_points_xdir - 1); i = i + number_points_xdir - 1) {
-            for (j = 0; j < (number_points_xdir - 1); j++) {
-                sample_locations_y[i + j + 1] = sample_current_loca_y;
+        for (i = 0; i <= (number_points_ydir * number_points_xdir - 1); i += number_points_ydir) {
+            for (j = 0; j <= (number_points_xdir); j++) {
+                sample_locations_y[i + j] = sample_current_loca_y;
             }
             sample_current_loca_y = sample_current_loca_y + units_distance_y;
         }
@@ -734,9 +734,7 @@ void visualize(fftw_real *fx, fftw_real *fy, fftw_real *vx, fftw_real *vy, fftw_
                 idx = (j * DIM) + i;
                 magnitude_x = sqrt(pow(vx[idx], 2) + pow(vy[idx], 2));
                 float radius = magnitude_x * 500;
-                //               printf("mag %f", magnitude_x);
                 set_colormap(magnitude_x * 50, alpha2);
-                //               direction_to_color(vx[idx], vy[idx], color_dir);
 
                 glEnable(GL_LIGHTING);
                 glEnable(GL_LIGHT0);
@@ -749,10 +747,8 @@ void visualize(fftw_real *fx, fftw_real *fy, fftw_real *vx, fftw_real *vy, fftw_
                              0);                        //      current vertex, and aligned with the current vector
                 glRotatef(90 - rotation_angle_list[idx], 0, 0, -1);
                 glRotatef(-90, 1, 0, 0);
-                //          glRotatef(-90,0,1,0);
                 glutSolidCone(radius / 4, radius, 10, magnitude_x * 500);            //2.8.  Draw the cone
-                glPopMatrix();
-                glDisable(GL_LIGHTING);
+
             }
 
         }
@@ -944,6 +940,7 @@ void visualize(fftw_real *fx, fftw_real *fy, fftw_real *vx, fftw_real *vy, fftw_
         glEnd();
 
     } else if (draw_vecs == 5) {
+        //draw streamlines
         int T = 100;
         int limit = 100;
 
@@ -1071,6 +1068,184 @@ void visualize(fftw_real *fx, fftw_real *fy, fftw_real *vx, fftw_real *vy, fftw_
             }
         }
         glEnd();
+
+    } else if (draw_vecs == 6){
+
+            /** normal using force data **/
+            ////---- define variables for generating arrow head ----//
+            double theta = PI / 4;
+            //create a matrix to rotate the velocity vector to get a arrow vector which is pi/4 angular with the velocity
+            double matrixA[4] = {cos(theta), -sin(theta), sin(theta), cos(theta)};//counter clockwise rotation matrix
+            double matrixB[4] = {cos(theta), sin(theta), -sin(theta), cos(theta)};//clockwise rotation matrix
+            // get start points x_min, y_min and end points x_max,y_max
+
+            float sample_locations_x[12000];
+            float sample_locations_y[12000];
+
+            float units_distance_x = (x_max - x_min) / (number_points_xdir - 1); // get the distance of cells based on subsample range and number of points
+            float units_distance_y = (y_max - y_min) / (number_points_ydir - 1);
+            // get the cells between the start points and ending point loat
+            float sample_current_loca_x = x_min;
+            float sample_current_loca_y = y_min;
+            //
+            float sample_vx[12000];
+            float sample_vy[12000];
+
+            sample_locations_x[0] = sample_current_loca_x;
+            sample_locations_y[0] = sample_current_loca_y;
+
+            for (i = 0; i <= (number_points_ydir * number_points_xdir - 1); i += number_points_xdir) {
+                sample_current_loca_x = x_min;
+                for (j = 0; j <= (number_points_xdir - 1); j++) {
+                    sample_locations_x[i + j ] = sample_current_loca_x;
+                    sample_current_loca_x = sample_current_loca_x + units_distance_x;
+                }
+            }
+
+            for (i = 0; i <= (number_points_ydir * number_points_xdir - 1); i += number_points_ydir) {
+                for (j = 0; j <= (number_points_xdir); j++) {
+                    sample_locations_y[i + j] = sample_current_loca_y;
+                }
+                sample_current_loca_y = sample_current_loca_y + units_distance_y;
+            }
+
+
+
+            //// ---------- get the force of each sample points with bilinear interpolation---- ////
+            float sample_fx[12000];
+            float sample_fy[12000];
+            //  for loop to save the velocitY value into array
+            glBegin(GL_LINES);
+            for (i = 0; i <= (number_points_xdir * number_points_ydir - 1); i++) {
+
+                int x_corn1 = (int) floor(sample_locations_x[i] / wn - 1);
+                int x_corn2 = (int) ceil(sample_locations_x[i] / wn - 1);
+                int x_corn3 = (int) floor(sample_locations_x[i] / wn - 1);
+                int x_corn4 = (int) ceil(sample_locations_x[i] / wn - 1);
+                int y_corn1 = (int) floor(sample_locations_y[i] / hn - 1);
+                int y_corn2 = (int) ceil(sample_locations_y[i] / hn - 1);
+                int y_corn3 = (int) floor(sample_locations_y[i] / hn - 1);
+                int y_corn4 = (int) ceil(sample_locations_y[i] / hn - 1);
+
+                //compute the index of the corners of a sample point
+                int sample_index_corn1 = y_corn1 * DIM + x_corn1;
+                int sample_index_corn2 = y_corn2 * DIM + x_corn2;
+                int sample_index_corn3 = y_corn3 * DIM + x_corn3;
+                int sample_index_corn4 = y_corn4 * DIM + x_corn4;
+
+                //compute the sample point velocity of x,y directions
+                float samplev_x_corn1 = fx[sample_index_corn1];
+                float samplev_x_corn2 = fx[sample_index_corn2];
+                float samplev_x_corn3 = fx[sample_index_corn3];
+                float samplev_x_corn4 = fx[sample_index_corn4];
+                float samplev_y_corn1 = fy[sample_index_corn1];
+                float samplev_y_corn2 = fy[sample_index_corn2];
+                float samplev_y_corn3 = fy[sample_index_corn3];
+                float samplev_y_corn4 = fy[sample_index_corn4];
+                //compute the distance of sample points to the cell corns
+                float sample_d2corn1x = sample_locations_x[i] - x_corn1 * wn - wn;
+                float sample_d2corn2x = wn - sample_d2corn1x;
+
+                float sample_d2corn1y = sample_locations_y[i] - y_corn1 * hn - hn;
+                float sample_d2corn3y = hn - sample_d2corn1y;
+
+                //compute the interpolartion x,y velocity of sample with space weighted
+                sample_fx[i] = (samplev_x_corn1 * sample_d2corn1x * sample_d2corn1y +
+                                samplev_x_corn2 * sample_d2corn2x * sample_d2corn1y +
+                                samplev_x_corn3 * sample_d2corn1x * sample_d2corn3y +
+                                samplev_x_corn4 * sample_d2corn2x * sample_d2corn3y) / (hn * wn);
+
+                sample_fy[i] = (samplev_y_corn1 * sample_d2corn1x * sample_d2corn1y +
+                                samplev_y_corn2 * sample_d2corn2x * sample_d2corn1y +
+                                samplev_y_corn3 * sample_d2corn1x * sample_d2corn3y +
+                                samplev_y_corn4 * sample_d2corn2x * sample_d2corn3y) / (hn * wn);
+                //creating arrows
+                float x1 = sample_locations_x[i];
+                float y1 = sample_locations_y[i];
+                float x2 = sample_locations_x[i] + vec_scale * sample_fx[i];
+                float y2 = sample_locations_y[i] + vec_scale * sample_fy[i];
+                float arrow[2] = {x1 - x2, y1 - y2};
+                float rotate_head_l1_x = arrow[0] * matrixA[0] + arrow[1] * matrixA[1];
+                float rotate_head_l1_y = arrow[0] * matrixA[2] + arrow[1] * matrixA[3];
+                float rotate_head_l1[2] = {(rotate_head_l1_x) / 3, (rotate_head_l1_y) / 3};
+                float rotate_head_l2_x = arrow[0] * matrixB[0] + arrow[1] * matrixB[1];
+                float rotate_head_l2_y = arrow[0] * matrixB[2] + arrow[1] * matrixB[3];
+                float rotate_head_l2[2] = {(rotate_head_l2_x) / 3, (rotate_head_l2_y) / 3};
+                float headvertex1x = (x2) + rotate_head_l1[0];
+                float headvertex1y = (y2) + rotate_head_l1[1];
+                float headvertex2x = (x2) + rotate_head_l2[0];
+                float headvertex2y = (y2) + rotate_head_l2[1];
+                float magV = sqrt(pow(sample_fx[i], 2) + pow(sample_fy[i], 2)) *20;
+
+                set_colormap(magV, alpha);
+                glVertex3f(x1, y1, z);
+                glVertex3f(x2, y2, z);
+
+                glVertex3f(x2, y2, z);
+                glVertex3f(headvertex1x, headvertex1y, z);
+
+                glVertex3f(x2, y2, z);
+                glVertex3f(headvertex2x, headvertex2y, z);
+            }
+            glEnd();
+    } else if (draw_vecs == 7) {
+        // draw_cones
+
+        float magnitude_x;
+        float rotation_angle_list[4000];
+        float rotation_angle;
+        for (i = 0; i < DIM; i += 2) {
+            for (j = 0; j < DIM; j += 2) {
+                idx = (j * DIM) + i;
+                float x1 = wn + (fftw_real) i * wn;
+                float y1 = hn + (fftw_real) j * hn;
+                float x2 = (wn + (fftw_real) i * wn) + vec_scale * vx[idx];
+                float y2 = (hn + (fftw_real) j * hn) + vec_scale * vy[idx];
+
+                if (vx[idx] > 0) {
+                    rotation_angle = atan(vy[idx] / vx[idx]) * 180 / PI;
+                } else if (vx[idx] < 0) {
+                    rotation_angle = atan(vy[idx] / vx[idx]) * 180 / PI + 180;
+                } else {
+                    if (vy[idx] == 0) {
+                        rotation_angle = 0;
+                    } else if (vy[idx] < 0) {
+                        rotation_angle = -90;
+                    } else {
+                        rotation_angle = 90;
+                    }
+                }
+                rotation_angle_list[idx] = rotation_angle;
+                //               printf("angle %f\n", rotation_angle);
+            }
+
+        }
+
+
+        for (i = 0; i < DIM; i += 2) {
+            for (j = 0; j < DIM; j += 2) {
+                idx = (j * DIM) + i;
+                magnitude_x = sqrt(pow(vx[idx], 2) + pow(vy[idx], 2));
+                float radius = magnitude_x * 500;
+                set_colormap(magnitude_x * 50, alpha2);
+
+                glEnable(GL_LIGHTING);
+                glEnable(GL_LIGHT0);
+                glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, GL_TRUE);
+                glEnable(GL_DEPTH_TEST);
+                glEnable(GL_COLOR_MATERIAL);
+                glPushMatrix();                                    //2.7.  Translate and rotate the canonical cone so as to be centered at the
+                glTranslatef((wn + (fftw_real) i * wn) + vec_scale * vx[idx],
+                             (hn + (fftw_real) j * hn) + vec_scale * vy[idx],
+                             0);                        //      current vertex, and aligned with the current vector
+
+//                ////--draw balls---////
+                glutSolidSphere(radius / 1.5,30,30);
+                glPopMatrix();
+                glDisable(GL_LIGHTING);
+            }
+
+        }
 
     }
 
