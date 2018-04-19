@@ -41,6 +41,8 @@ std::list<fftw_real *> queue_fy;
 std::list<fftw_real *> queue_rho;
 
 float sax, say, sbx, sby = 0;
+float saturation = 1;
+float hue = 1;
 
 float seed_point_x = 300; // set streamline starting points
 float seed_point_y = 300;
@@ -281,7 +283,7 @@ float scaleVelocity(float v, float min, float max) {
 //set_colormap: Sets three different types of colormaps
 void set_colormap(float vy, float alpha) {
     float R, G, B;
-//    printf("%d\n", scalar_col);
+    float nR, nG, nB;
 
     if (scalar_col == COLOR_BANDS) {
         float color_clamp_min = (float) minimal / 256;
@@ -304,7 +306,21 @@ void set_colormap(float vy, float alpha) {
     } else if (scalar_col == COLOR_BANDS) {
         rainbow(vy, &R, &G, &B);
     }
-    glColor4f(R, G, B, alpha);
+
+    float SU = saturation * cos(hue * M_PI / 180);
+    float SW = saturation * sin(hue * M_PI / 180);
+
+    nR = (.299 + .701 * SU + .168 * SW) * R
+         + (.587 - .587 * SU + .330 * SW) * G
+         + (.114 - .114 * SU - .497 * SW) * B;
+    nG = (.299 - .299 * SU - .328 * SW) * R
+         + (.587 + .413 * SU + .035 * SW) * G
+         + (.114 - .114 * SU + .292 * SW) * B;
+    nB = (.299 - .3 * SU + 1.25 * SW) * R
+         + (.587 - .588 * SU - 1.05 * SW) * G
+         + (.114 + .886 * SU - .203 * SW) * B;
+
+    glColor4f(nR, nG, nB, alpha);
 }
 
 
@@ -727,9 +743,7 @@ void visualize(fftw_real *fx, fftw_real *fy, fftw_real *vx, fftw_real *vy, fftw_
                 rotation_angle_list[idx] = rotation_angle;
                 //               printf("angle %f\n", rotation_angle);
             }
-
         }
-
 
         for (i = 0; i < DIM; i += 2) {
             for (j = 0; j < DIM; j += 2) {
@@ -851,8 +865,6 @@ void visualize(fftw_real *fx, fftw_real *fy, fftw_real *vx, fftw_real *vy, fftw_
             }
             sample_current_loca_y = sample_current_loca_y + units_distance_y;
         }
-
-
 
         //// ---------- get the force of each sample points with bilinear interpolation---- ////
         float sample_fx[12000];
@@ -1661,6 +1673,14 @@ int main(int argc, char **argv) {
             GLUI_RadioButton(radio, "Fantasy");
     new
             GLUI_RadioButton(radio, "Color band");
+
+    GLUI_Panel *sat_panel = new GLUI_Panel(obj_panel, "Saturation setting");
+    GLUI_Scrollbar *sats = new GLUI_Scrollbar(sat_panel, "", GLUI_SCROLL_HORIZONTAL, &saturation);
+    sats->set_float_limits(0, 1);
+
+    GLUI_Panel *hue_panel = new GLUI_Panel(obj_panel, "Hue setting");
+    GLUI_Scrollbar *hues = new GLUI_Scrollbar(hue_panel, "", GLUI_SCROLL_HORIZONTAL, &hue);
+    hues->set_float_limits(1, 100);
 
     min_spinner = new
             GLUI_Spinner(type_panel, "Min:", &minimal, 2, control_cb);
